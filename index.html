@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Minwall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Azeret+Mono:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Dela+Gothic+One&family=Fira+Code:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Martian+Mono:wght@400;700&family=Rubik+Mono+One&family=Source+Code+Pro:wght@400;700&family=Space+Mono:wght@400;700&family=Unbounded:wght@900&family=Victor+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: transport bar on top, control rail left, the wallpaper stage fills the rest */
+:root {
+  --ink: #0f1117;
+  --panel: #151821;
+  --raise: #1d2130;
+  --line: #282d3c;
+  --fg: #dde0ea;
+  --muted: #8a90a3;
+  --accent: #f5a524;
+  --accent-ink: #1b1305;
+  --danger: #ff7b72;
+  --ui: "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --display: "Unbounded", "Arial Black", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+html, body { height: 100%; margin: 0 }
+body { background: var(--ink); color: var(--fg); font: 14px/1.45 var(--ui); display: grid; grid-template-rows: auto 1fr; overflow: hidden }
+header.bar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap }
+.brand { font: 900 16px/1 var(--display); letter-spacing: .01em; white-space: nowrap }
+.brand span { color: var(--accent) }
+.transport { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px }
+#scrub { flex: 1 }
+.time { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 96px; text-align: right }
+.actions { display: flex; gap: 8px; flex-wrap: wrap }
+button { font: 500 13px var(--ui); color: var(--fg); background: var(--raise); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px; cursor: pointer; white-space: nowrap }
+button:hover { border-color: #3d4459 }
+button:disabled { opacity: .5; cursor: default }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600 }
+button.ghost { background: transparent }
+button.icon { width: 34px; padding: 6px 0; font-family: var(--mono) }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+kbd { font: 10.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-left: 4px }
+button.primary kbd { color: var(--accent-ink); border-color: rgba(0,0,0,.25) }
+
+.app { display: grid; grid-template-columns: 348px 1fr; min-height: 0 }
+aside { overflow-y: auto; border-right: 1px solid var(--line); background: var(--panel); padding-bottom: 48px }
+details.sec { border-bottom: 1px solid var(--line) }
+details.sec > summary { list-style: none; cursor: pointer; padding: 12px 16px; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; user-select: none }
+details.sec > summary::-webkit-details-marker { display: none }
+details.sec > summary::after { content: "+" }
+details.sec[open] > summary::after { content: "–" }
+details.sec[open] > summary { color: var(--fg) }
+.body { padding: 0 16px 16px; display: grid; gap: 10px }
+.row { display: grid; grid-template-columns: 92px 1fr 46px; align-items: center; gap: 8px; min-width: 0 }
+.row.wide { grid-template-columns: 92px 1fr }
+.row > label { color: var(--muted); font-size: 12.5px }
+.row output { font: 11.5px var(--mono); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums }
+.row .pair { display: flex; gap: 6px; align-items: center; min-width: 0 }
+.check { display: flex; gap: 8px; align-items: center; color: var(--fg); font-size: 13px; cursor: pointer }
+select, input[type=text], input[type=number], input[type=password], input[type=search], textarea { width: 100%; min-width: 0; background: var(--ink); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: 13px var(--ui) }
+textarea { font: 12px/1.4 var(--mono); resize: vertical }
+input[type=range] { width: 100%; accent-color: var(--accent) }
+input[type=checkbox] { accent-color: var(--accent); margin: 0 }
+.hint { color: var(--muted); font-size: 12px; margin: 0 }
+.hint code { font: 11.5px var(--mono); color: var(--fg) }
+.btns { display: flex; gap: 6px; flex-wrap: wrap }
+.btns > button { flex: 1 }
+
+.tabs { display: flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; background: var(--ink) }
+.tabs button { flex: 1; border: 0; background: transparent; color: var(--muted); padding: 5px 0 }
+.tabs button[aria-selected=true] { background: var(--raise); color: var(--fg) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { font: 11.5px var(--mono); padding: 3px 8px; border-radius: 99px; background: var(--ink); border: 1px solid var(--line); color: var(--muted) }
+.chip:hover { color: var(--fg) }
+.chip .x { margin-left: 6px; opacity: .6 }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 18px 12px; text-align: center; color: var(--muted); font-size: 13px; transition: border-color .15s, background .15s }
+.drop.over { border-color: var(--accent); background: rgba(245,165,36,.06); color: var(--fg) }
+.srcinfo { font: 11.5px/1.5 var(--mono); color: var(--muted); background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; overflow-wrap: anywhere }
+.srcinfo b { color: var(--fg); font-weight: 500 }
+.files { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--ink) }
+.files label { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; padding: 3px 8px; font: 11.5px var(--mono); color: var(--muted); cursor: pointer }
+.files label:hover { background: var(--raise) }
+.files label.on { color: var(--fg) }
+.files label span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left }
+.files label span:last-child { font-variant-numeric: tabular-nums; opacity: .7 }
+
+main.stage { position: relative; display: flex; align-items: center; justify-content: center; padding: 28px; min-width: 0; min-height: 0; background: repeating-conic-gradient(#121520 0 25%, #0f1117 0 50%) 0 0 / 22px 22px }
+#cv { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; box-shadow: 0 24px 70px rgba(0,0,0,.55), 0 0 0 1px var(--line) }
+.info { position: absolute; left: 16px; bottom: 12px; right: 16px; display: flex; gap: 16px; flex-wrap: wrap; font: 11.5px var(--mono); color: var(--muted); pointer-events: none }
+.info span { background: rgba(15,17,23,.82); padding: 3px 8px; border-radius: 4px; font-variant-numeric: tabular-nums }
+.busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10,11,16,.72); backdrop-filter: blur(3px) }
+.busy .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; width: min(380px, calc(100% - 32px)); display: grid; gap: 12px }
+.busy h3 { margin: 0; font: 600 15px var(--ui) }
+.bar-track { height: 6px; border-radius: 3px; background: var(--ink); overflow: hidden }
+.bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .1s linear }
+.busy p { margin: 0; font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
+#toast { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: min(420px, calc(100% - 32px)); background: var(--raise); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.4); opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; z-index: 10 }
+#toast.show { opacity: 1; transform: none }
+#toast.err { border-color: var(--danger); color: #ffd6d2 }
+
+@media (max-width: 860px) {
+  body { overflow: auto; height: auto; display: block }
+  .app { grid-template-columns: 1fr }
+  main.stage { order: -1; height: 56vh; padding: 16px }
+  aside { border-right: 0; overflow: visible }
+  .info { display: none }
+}
+@media (prefers-reduced-motion: reduce) { #toast, .drop { transition: none } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">min<span>wall</span></div>
+  <div class="transport">
+    <button class="icon" id="play" title="Play / pause (Space)" aria-label="Play or pause">❚❚</button>
+    <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Loop position">
+    <span class="time" id="time">0.0 / 12.0 s</span>
+  </div>
+  <div class="actions">
+    <button id="surprise" title="Randomize the look (R)">Surprise me<kbd>R</kbd></button>
+    <button id="savePng" title="Save PNG (P)">PNG<kbd>P</kbd></button>
+    <button id="saveVid" class="primary" title="Export the loop as video (V)">Export video<kbd>V</kbd></button>
+  </div>
+</header>
+<div class="app">
+  <aside id="panel"></aside>
+  <main class="stage" id="stage">
+    <canvas id="cv" width="1920" height="1080"></canvas>
+    <div class="info" id="info"></div>
+    <div class="busy" id="busy" hidden>
+      <div class="card">
+        <h3 id="busyTitle">Encoding video</h3>
+        <div class="bar-track"><div class="bar-fill" id="busyBar"></div></div>
+        <p id="busyText">Preparing…</p>
+        <div class="btns"><button id="busyCancel">Cancel</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
+<script id="app">
+'use strict';
+/* ───────────────────────── helpers ───────────────────────── */
+const $ = (s, r = document) => r.querySelector(s);
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k in e && typeof v !== 'string') e[k] = v;
+    else if (v !== undefined && v !== null && v !== false) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null) e.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return e;
+}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('minwall:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('minwall:' + k, JSON.stringify(v)); return true; } catch { return false; } },
+};
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const fmtKB = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+const extOf = p => { const m = /\.([A-Za-z0-9]+)$/.exec(p); return m ? m[1].toLowerCase() : (/(^|\/)(Makefile|Dockerfile)$/i.test(p) ? 'mk' : ''); };
+let toastTimer;
+function toast(msg, err = false) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', err ? 6000 : 2600);
+}
+function download(blob, name) {
+  const a = el('a', { href: URL.createObjectURL(blob), download: name });
+  document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const j = i++; try { out[j] = await fn(items[j], j); } catch { out[j] = null; } }
+  }));
+  return out;
+}
+
+/* ───────────────────────── data ───────────────────────── */
+const PALETTES = {
+  midnight: { name: 'Midnight', bg: ['#0a0f1e', '#17203d'], id: '#8b9cc4', kw: '#c792ea', str: '#c3e88d', num: '#f78c6c', fn: '#82aaff', type: '#ffcb6b', punct: '#4f5b7c', file: '#ff5370', accent: ['#82aaff', '#c792ea', '#ff5370'] },
+  ember: { name: 'Ember', bg: ['#120907', '#2b120c'], id: '#b8978a', kw: '#ff7a45', str: '#ffd166', num: '#ef476f', fn: '#ffb38a', type: '#f4a261', punct: '#6a453a', file: '#ffd166', accent: ['#ff7a45', '#ffd166', '#ef476f'] },
+  rosepine: { name: 'Rosé Pine', bg: ['#191724', '#26233a'], id: '#908caa', kw: '#31a0c4', str: '#f6c177', num: '#eb6f92', fn: '#9ccfd8', type: '#c4a7e7', punct: '#524f67', file: '#ebbcba', accent: ['#c4a7e7', '#ebbcba', '#9ccfd8'] },
+  nord: { name: 'Nord', bg: ['#242933', '#2e3440'], id: '#a3adbf', kw: '#81a1c1', str: '#a3be8c', num: '#b48ead', fn: '#88c0d0', type: '#8fbcbb', punct: '#4c566a', file: '#ebcb8b', accent: ['#88c0d0', '#81a1c1', '#b48ead'] },
+  synth: { name: 'Synthwave', bg: ['#140726', '#2e0f4f'], id: '#b69ad9', kw: '#ff4fd8', str: '#ffd84d', num: '#ff8b3d', fn: '#36f9f6', type: '#fe78c6', punct: '#5a3a82', file: '#36f9f6', accent: ['#ff4fd8', '#36f9f6', '#ffd84d'] },
+  phosphor: { name: 'Phosphor', bg: ['#020806', '#06170f'], id: '#3fae6a', kw: '#8dffb0', str: '#c6ff8d', num: '#5dffd0', fn: '#b0ffcf', type: '#7dff9a', punct: '#1c5a36', file: '#e8ffef', accent: ['#39ff88', '#b6ff5c', '#3fffe0'] },
+  mono: { name: 'Graphite', bg: ['#0c0c0e', '#1c1c21'], id: '#8d8d96', kw: '#e8e8ee', str: '#b9b9c2', num: '#cfcfd6', fn: '#f4f4f8', type: '#dadae2', punct: '#46464f', file: '#ffffff', accent: ['#ffffff', '#a9a9b3', '#6e6e78'] },
+  paper: { name: 'Paper', light: true, bg: ['#f4f0e6', '#e5ddcb'], id: '#6f6656', kw: '#a3361f', str: '#39703a', num: '#8c4fa3', fn: '#1f5aa3', type: '#9a6b00', punct: '#b3a891', file: '#a3361f', accent: ['#a3361f', '#1f5aa3', '#39703a'] },
+  frost: { name: 'Frost', light: true, bg: ['#eef4f9', '#cfdfee'], id: '#5b7389', kw: '#2359c4', str: '#138a72', num: '#c2410c', fn: '#0e7490', type: '#7c3aed', punct: '#a9bccd', file: '#2359c4', accent: ['#2359c4', '#0e7490', '#7c3aed'] },
+};
+const MONO_FONTS = ['JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Space Mono', 'Source Code Pro', 'Victor Mono', 'Martian Mono', 'Azeret Mono', 'DM Mono'];
+const DISPLAY_FONTS = { 'Anton': 400, 'Archivo Black': 400, 'Bebas Neue': 400, 'Unbounded': 900, 'Rubik Mono One': 400, 'Dela Gothic One': 400, 'JetBrains Mono': 700 };
+const SIZES = [
+  ['3840x2160', '4K UHD · 3840×2160'], ['5120x2880', '5K · 5120×2880'], ['2560x1440', 'QHD · 2560×1440'], ['1920x1080', 'Full HD · 1920×1080'],
+  ['3456x2234', 'MacBook Pro 16″ · 3456×2234'], ['3024x1964', 'MacBook Pro 14″ · 3024×1964'], ['2560x1664', 'MacBook Air 13″ · 2560×1664'],
+  ['3440x1440', 'Ultrawide · 3440×1440'], ['5120x1440', 'Super ultrawide · 5120×1440'],
+  ['1320x2868', 'iPhone Pro Max · 1320×2868'], ['1206x2622', 'iPhone Pro · 1206×2622'], ['2064x2752', 'iPad Pro 13″ · 2064×2752'],
+  ['1080x1920', 'Story / Reel · 1080×1920'], ['1080x1080', 'Square post · 1080×1080'], ['1500x500', 'X header · 1500×500'], ['1584x396', 'LinkedIn banner · 1584×396'],
+  ['1280x640', 'GitHub social preview · 1280×640'], ['custom', 'Custom'],
+];
+const KW = new Set(('abstract and as assert async await begin bool break byte case catch chan char class const constexpr continue def default defer del delete do double elif else elseif end enum except export extends extern false final finally float fn for foreach from func function go goto if impl implements import in include instanceof int interface is lambda let long loop macro match mod module mut namespace new nil none not null of or override package pass private protected pub public raise range readonly rescue return select self short signed sizeof static str string struct super switch template then this throw throws trait true try type typeof typedef u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 usize isize undefined union unless unsafe unsigned until use using var virtual void volatile where while with yield None True False Self require local').split(' '));
+const STOP = new Set('the and for you this that with are not but from have was will can your all has its any get set div span px http https www com org html css src value data item key index len length args arg obj val tmp err res req self cls'.split(' '));
+const CODE_EXT = { js: 1, mjs: 1, cjs: 1, ts: 1, tsx: 1, jsx: 1, py: 1, rb: 1, go: 1, rs: 1, c: 1, h: .8, cc: 1, cpp: 1, cxx: 1, hpp: .8, cs: 1, java: 1, kt: 1, swift: 1, m: 1, mm: 1, php: 1, lua: 1, sh: .7, bash: .7, zsh: .7, zig: 1, ex: 1, exs: 1, erl: 1, hs: 1, ml: 1, scala: 1, clj: 1, dart: 1, vue: 1, svelte: 1, css: .6, scss: .6, sql: .7, r: 1, jl: 1, nim: 1, sol: 1, glsl: 1, wgsl: 1, metal: 1, cu: 1, html: .5, json: .15, yml: .25, yaml: .25, toml: .25, md: .12, mk: .3 };
+const HASH_LANGS = new Set(['py', 'rb', 'sh', 'bash', 'zsh', 'yml', 'yaml', 'toml', 'r', 'pl', 'ex', 'exs', 'nim', 'jl', 'mk', 'coffee', 'cr']);
+const PLAIN_LANGS = new Set(['md', 'txt', 'json', '']);
+const EXCLUDE_DIR = /(^|\/)(node_modules|vendor|dist|build|out|target|\.git|\.next|\.nuxt|\.svelte-kit|coverage|__pycache__|third_party|thirdparty|external|deps|Pods|\.venv|venv|env|site-packages|bower_components|generated|\.cache|\.idea|\.vscode)(\/|$)/i;
+const EXCLUDE_FILE = /(\.min\.|\.map$|(^|\/)[^/]*lock[^/]*$|\.snap$|\.pb\.|_pb2|\.generated\.|\.d\.ts$|\.bundle\.)/i;
+
+/* ───────────────────────── settings ───────────────────────── */
+const DEFAULTS = {
+  preset: '3840x2160', width: 3840, height: 2160, preview: 'auto', padding: 0, rotation: 0,
+  font: 'JetBrains Mono', weight: 400, fontSize: 14, lineHeight: 1.35, letterSpacing: 0, minify: 'aggressive', fileMarkers: true, offset: 0,
+  palette: 'midnight', colorMode: 'syntax', textAlpha: 0.6, bgStyle: 'linear', bgAngle: 135,
+  overlay: 'title', titleText: 'MINWALL', titleLocked: false, displayFont: 'Anton', titleScale: 0.82, dimAlpha: 0.16, desaturate: true, feather: 0, maskInvert: false,
+  cloudWords: 70, cloudRotate: 0.2, cloudSeed: 7, cloudAlpha: 0.85,
+  motion: 'scroll-up', loopSeconds: 12, scrollLen: 1, spotlight: false, spotRadius: 0.28, hueCycle: false, pulse: false,
+  glow: 0.35, glowRadius: 6, vignette: 0.45, grain: 0.08, scanlines: 0,
+  fps: 60, exportScale: 1, bitrate: 30, videoFormat: 'mp4', pickMode: 'best', budgetKB: 250,
+};
+const S = Object.assign({}, DEFAULTS, store.get('settings', {}));
+
+const sel = (sec, key, label, options, dirty, show) => ({ sec, key, label, type: 'select', options, dirty, show });
+const rng = (sec, key, label, min, max, step, dirty, fmt, show) => ({ sec, key, label, type: 'range', min, max, step, dirty, fmt, show });
+const chk = (sec, key, label, dirty, show) => ({ sec, key, label, type: 'check', dirty, show });
+const pct = v => Math.round(v * 100) + '%';
+const px = v => v + 'px';
+const isMask = () => S.overlay === 'title' || S.overlay === 'cloud';
+const isCloud = () => S.overlay === 'cloud' || S.overlay === 'cloud-solid';
+
+const CONTROLS = [
+  sel('Canvas', 'preset', 'Size', SIZES, 'size'),
+  { sec: 'Canvas', key: 'dims', type: 'dims' },
+  sel('Canvas', 'preview', 'Preview', [['auto', 'Auto (fast at 4K+)'], ['full', 'Full resolution'], ['half', 'Half resolution']], 'size'),
+  rng('Canvas', 'rotation', 'Rotation', -90, 90, 1, 'layout', v => v + '°'),
+  rng('Canvas', 'padding', 'Margin', 0, 400, 2, 'layout', px),
+
+  sel('Type', 'font', 'Font', MONO_FONTS.map(f => [f, f]), 'layout'),
+  sel('Type', 'weight', 'Weight', [[400, 'Regular'], [700, 'Bold']], 'layout'),
+  rng('Type', 'fontSize', 'Size', 5, 64, 0.5, 'layout', px),
+  rng('Type', 'lineHeight', 'Line height', 0.8, 2.6, 0.05, 'layout', v => v.toFixed(2)),
+  rng('Type', 'letterSpacing', 'Tracking', -2, 8, 0.1, 'layout', v => v.toFixed(1)),
+  sel('Type', 'minify', 'Minify', [['aggressive', 'Aggressive (no spaces)'], ['collapse', 'Collapse whitespace'], ['raw', 'Raw (keep lines)']], 'text'),
+  rng('Type', 'offset', 'Start at', 0, 0.99, 0.01, 'layout', pct),
+  chk('Type', 'fileMarkers', 'Mark file boundaries with «path»', 'text'),
+
+  sel('Color', 'palette', 'Palette', Object.entries(PALETTES).map(([k, p]) => [k, p.name + (p.light ? ' (light)' : '')]), 'color'),
+  sel('Color', 'colorMode', 'Text color', [['syntax', 'Syntax highlight'], ['gradient', 'Palette gradient'], ['mono', 'Single color']], 'layout'),
+  rng('Color', 'textAlpha', 'Opacity', 0.05, 1, 0.01, 'frame', pct, () => !isMask()),
+  sel('Color', 'bgStyle', 'Background', [['linear', 'Linear gradient'], ['radial', 'Radial glow'], ['solid', 'Solid']], 'bg'),
+  rng('Color', 'bgAngle', 'Angle', 0, 360, 1, 'bg', v => v + '°', () => S.bgStyle === 'linear'),
+
+  sel('Overlay', 'overlay', 'Mode', [['title', 'Title (code fills the letters)'], ['cloud', 'Word cloud (code fills the words)'], ['cloud-solid', 'Word cloud (colored, behind code)'], ['none', 'None']], 'mask'),
+  { sec: 'Overlay', key: 'titleText', label: 'Title', type: 'textarea', dirty: 'mask', show: () => S.overlay === 'title' },
+  sel('Overlay', 'displayFont', 'Display font', Object.keys(DISPLAY_FONTS).map(f => [f, f]), 'mask', () => S.overlay !== 'none'),
+  rng('Overlay', 'titleScale', 'Title size', 0.2, 1.2, 0.01, 'mask', pct, () => S.overlay === 'title'),
+  rng('Overlay', 'cloudWords', 'Words', 10, 200, 1, 'mask', v => v, isCloud),
+  rng('Overlay', 'cloudRotate', 'Vertical', 0, 1, 0.05, 'mask', pct, isCloud),
+  rng('Overlay', 'cloudAlpha', 'Cloud opacity', 0.05, 1, 0.01, 'frame', pct, () => S.overlay === 'cloud-solid'),
+  { sec: 'Overlay', key: 'reshuffle', type: 'button', label: 'Reshuffle cloud', show: isCloud, run: () => { S.cloudSeed = (Math.random() * 1e9) | 0; changed('mask'); } },
+  rng('Overlay', 'dimAlpha', 'Outside', 0, 0.8, 0.01, 'frame', pct, () => isMask() || S.spotlight),
+  rng('Overlay', 'feather', 'Feather', 0, 40, 1, 'mask', px, isMask),
+  chk('Overlay', 'desaturate', 'Desaturate code outside the mask', 'frame', () => isMask() || S.spotlight),
+  chk('Overlay', 'maskInvert', 'Invert mask', 'mask', isMask),
+
+  sel('Motion', 'motion', 'Motion', [['scroll-up', 'Scroll up'], ['scroll-down', 'Scroll down'], ['typewriter', 'Typewriter'], ['none', 'Still']], 'layout'),
+  rng('Motion', 'loopSeconds', 'Loop length', 2, 60, 0.5, 'frame', v => v + 's'),
+  rng('Motion', 'scrollLen', 'Distance', 0.25, 6, 0.25, 'layout', v => v + '×', () => S.motion.startsWith('scroll')),
+  chk('Motion', 'spotlight', 'Wandering spotlight', 'frame'),
+  rng('Motion', 'spotRadius', 'Spot size', 0.05, 0.8, 0.01, 'frame', pct, () => S.spotlight),
+  chk('Motion', 'pulse', 'Breathing mask', 'frame', isMask),
+  chk('Motion', 'hueCycle', 'Hue cycle', 'frame'),
+
+  rng('Finish', 'glow', 'Glow', 0, 1.5, 0.01, 'frame', pct),
+  rng('Finish', 'glowRadius', 'Glow radius', 1, 40, 1, 'frame', px, () => S.glow > 0),
+  rng('Finish', 'vignette', 'Vignette', 0, 1, 0.01, 'frame', pct),
+  rng('Finish', 'grain', 'Grain', 0, 0.5, 0.01, 'frame', pct),
+  rng('Finish', 'scanlines', 'Scanlines', 0, 0.6, 0.01, 'frame', pct),
+
+  sel('Export', 'videoFormat', 'Video', [['mp4', 'MP4 · frame-perfect (WebCodecs)'], ['webm', 'WebM · real-time recorder']], 'none'),
+  sel('Export', 'fps', 'Frame rate', [[24, '24 fps'], [30, '30 fps'], [60, '60 fps']], 'none'),
+  sel('Export', 'exportScale', 'Scale', [[0.5, '0.5× (half size)'], [1, '1× (as designed)'], [1.5, '1.5×'], [2, '2× (retina)']], 'none'),
+  rng('Export', 'bitrate', 'Bitrate', 4, 120, 1, 'none', v => v + 'M'),
+];
+
+/* ───────────────────────── source handling ───────────────────────── */
+const SRC_STATE = { label: 'minwall (this page)', repo: null, files: [], candidates: [], selected: new Set() };
+let SRC = '', COL = new Uint8Array(0), WORDS = [];
+
+function minify(src, ext, level) {
+  src = src.replace(/\r\n?/g, '\n');
+  if (level === 'raw') return src.replace(/\t/g, '  ').replace(/\n{3,}/g, '\n\n');
+  let out = src;
+  if (!PLAIN_LANGS.has(ext)) {
+    const re = HASH_LANGS.has(ext)
+      ? /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(#[^\n]*)/g
+      : /("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\]){0,4000}`)|(\/\/[^\n]*|\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->)/g;
+    out = src.replace(re, (m, str, com) => str ? str : ' ');
+  }
+  out = out.replace(/\s+/g, ' ').trim();
+  if (level === 'aggressive') out = out.replace(/ ?([{}()[\];,:=<>+\-*/&|!?.^%~]) ?/g, '$1');
+  return out;
+}
+function tokenize(text) {
+  const col = new Uint8Array(text.length);
+  const re = /(«[^»\n]{0,300}»)|("(?:\\.|[^"\\\n]){0,400}"|'(?:\\.|[^'\\\n]){0,400}'|`(?:\\.|[^`\\]){0,400}`)|(\b\d[\w.]*)|([A-Za-z_$][\w$]*)|(\s+)|([^\w\s])/g;
+  let m;
+  while ((m = re.exec(text))) {
+    let c;
+    if (m[1]) c = 7; else if (m[2]) c = 2; else if (m[3]) c = 3;
+    else if (m[4]) { const w = m[4]; c = KW.has(w) ? 1 : text[re.lastIndex] === '(' ? 4 : /^[A-Z]/.test(w) ? 5 : 0; }
+    else if (m[5]) c = 0; else c = 6;
+    col.fill(c, m.index, re.lastIndex);
+  }
+  return col;
+}
+function wordFreq(texts) {
+  const f = new Map();
+  for (const t of texts) {
+    const re = /[A-Za-z_][A-Za-z0-9_]{2,23}/g; let m;
+    while ((m = re.exec(t))) { const w = m[0]; if (KW.has(w) || STOP.has(w.toLowerCase()) || /^_+$/.test(w)) continue; f.set(w, (f.get(w) || 0) + 1); }
+  }
+  return [...f].sort((a, b) => b[1] - a[1]).slice(0, 300).map(([word, n]) => ({ word, n }));
+}
+function processSource() {
+  const files = SRC_STATE.files;
+  const parts = files.map(f => (S.fileMarkers && files.length > 1 ? `«${f.path}» ` : '') + minify(f.text, extOf(f.path), S.minify));
+  SRC = parts.join(S.minify === 'raw' ? '\n\n' : ' ') || 'const nothing=loaded;';
+  COL = tokenize(SRC);
+  WORDS = wordFreq(files.map(f => f.text));
+}
+
+/* auto file select */
+function scoreFiles(cands) {
+  const langBytes = {};
+  for (const c of cands) { const e = extOf(c.path); if ((CODE_EXT[e] || 0) >= .9) langBytes[e] = (langBytes[e] || 0) + Math.min(c.size, 60000); }
+  const primary = Object.entries(langBytes).sort((a, b) => b[1] - a[1])[0]?.[0];
+  for (const c of cands) {
+    const e = extOf(c.path), w = CODE_EXT[e] || 0;
+    if (!w || EXCLUDE_DIR.test(c.path) || EXCLUDE_FILE.test(c.path) || c.size < 300 || c.size > 250000) { c.score = 0; continue; }
+    const kb = c.size / 1024;
+    let s = w * Math.exp(-Math.pow(Math.log(kb / 14), 2) / 3);
+    const depth = c.path.split('/').length - 1;
+    s *= Math.pow(0.9, Math.max(0, depth - 1));
+    if (/(^|\/)(src|lib|core|app|pkg|cmd|internal|kernel|engine|runtime)\//i.test(c.path)) s *= 1.35;
+    if (/(^|\/)(tests?|spec|__tests__|examples?|demos?|docs?|fixtures?|benchmarks?|scripts?|samples?|playground)\/|[._-](test|spec)\./i.test(c.path)) s *= 0.35;
+    if (e === primary) s *= 1.7;
+    c.score = s;
+  }
+  return primary;
+}
+function autoPick(mode = S.pickMode) {
+  const cands = SRC_STATE.candidates.filter(c => c.score > 0);
+  const budget = S.budgetKB * 1024, maxFiles = 60;
+  let order;
+  if (mode === 'random') {
+    const r = mulberry32((Math.random() * 1e9) | 0);
+    order = cands.map(c => ({ c, k: Math.pow(r(), 1 / c.score) })).sort((a, b) => b.k - a.k).map(o => o.c);
+  } else order = [...cands].sort((a, b) => b.score - a.score);
+  const picked = new Set(); let total = 0;
+  for (const c of order) {
+    if (picked.size >= maxFiles || total >= budget) break;
+    if (total + c.size > budget * 1.15 && picked.size) continue;
+    picked.add(c.path); total += c.size;
+  }
+  SRC_STATE.selected = picked;
+}
+async function loadSelected() {
+  const chosen = SRC_STATE.candidates.filter(c => SRC_STATE.selected.has(c.path));
+  if (!chosen.length) { toast('No files selected. Tick at least one file in the list.', true); return; }
+  toast(`Loading ${chosen.length} files…`);
+  let done = 0;
+  const texts = await pool(chosen, 8, async c => { const t = await c.load(); done++; setSourceInfo(`Loading ${done}/${chosen.length}…`); return t; });
+  const files = chosen.map((c, i) => ({ path: c.path, text: texts[i] })).filter(f => typeof f.text === 'string' && !/\u0000/.test(f.text.slice(0, 2000)));
+  if (!files.length) { toast('None of the selected files could be read.', true); return; }
+  const failed = chosen.length - files.length;
+  setFiles(files, SRC_STATE.label);
+  toast(`Loaded ${files.length} files${failed ? ` (${failed} failed)` : ''}.`);
+}
+function setFiles(files, label) {
+  SRC_STATE.files = files; SRC_STATE.label = label;
+  const total = files.reduce((a, f) => a + f.text.length, 0);
+  if (total < 3_000_000) store.set('source', { label, repo: SRC_STATE.repo, files });
+  changed('text');
+  renderSourcePanel();
+}
+
+/* GitHub */
+let GH_TOKEN = '';
+function parseRepo(input) {
+  input = input.trim().replace(/\.git$/, '').replace(/^git@github\.com:/, '');
+  const m = /^(?:https?:\/\/)?(?:www\.)?(?:github\.com\/)?([\w.-]+)\/([\w.-]+)(?:\/(?:tree|blob)\/([^/]+)(?:\/(.+))?)?\/?$/.exec(input);
+  return m ? { owner: m[1], repo: m[2], branch: m[3] || '', sub: (m[4] || '').replace(/\/$/, '') } : null;
+}
+async function gh(path) {
+  const headers = { Accept: 'application/vnd.github+json' };
+  if (GH_TOKEN) headers.Authorization = 'Bearer ' + GH_TOKEN;
+  const r = await fetch('https://api.github.com' + path, { headers });
+  if (r.status === 403 || r.status === 429) throw new Error(GH_TOKEN ? 'GitHub refused the request (rate limit or token scope).' : 'GitHub rate limit hit (60 requests per hour without a token). Add a token or try again later.');
+  if (r.status === 404) throw new Error('Repo or path not found. Check the spelling, or add a token for a private repo.');
+  if (r.status === 401) throw new Error('GitHub rejected the token. Check it and try again.');
+  if (!r.ok) throw new Error('GitHub error ' + r.status);
+  return r.json();
+}
+async function loadRepo(input) {
+  const p = parseRepo(input);
+  if (!p) { toast('Enter a repo as owner/name or paste a github.com URL.', true); return; }
+  const btn = $('#ghLoad'); btn.disabled = true; btn.textContent = 'Reading repo…';
+  try {
+    const meta = await gh(`/repos/${p.owner}/${p.repo}`);
+    const branch = p.branch || meta.default_branch;
+    const treeish = encodeURIComponent(p.sub ? `${branch}:${p.sub}` : branch);
+    const tree = await gh(`/repos/${p.owner}/${p.repo}/git/trees/${treeish}?recursive=1`);
+    const prefix = p.sub ? p.sub + '/' : '';
+    const cands = tree.tree.filter(t => t.type === 'blob').map(t => {
+      const full = prefix + t.path;
+      return {
+        path: t.path, size: t.size || 0,
+        load: async () => {
+          const enc = full.split('/').map(encodeURIComponent).join('/');
+          const r = GH_TOKEN
+            ? await fetch(`https://api.github.com/repos/${p.owner}/${p.repo}/contents/${enc}?ref=${encodeURIComponent(branch)}`, { headers: { Accept: 'application/vnd.github.raw', Authorization: 'Bearer ' + GH_TOKEN } })
+            : await fetch(`https://raw.githubusercontent.com/${p.owner}/${p.repo}/${encodeURIComponent(branch)}/${enc}`);
+          if (!r.ok) throw new Error(r.status);
+          return r.text();
+        },
+      };
+    });
+    SRC_STATE.repo = { ...p, branch, stars: meta.stargazers_count, lang: meta.language };
+    SRC_STATE.label = `${p.owner}/${p.repo}${p.sub ? '/' + p.sub : ''}@${branch}`;
+    SRC_STATE.candidates = cands;
+    scoreFiles(cands); autoPick();
+    if (!S.titleLocked) { S.titleText = (p.sub ? p.sub.split('/').pop() : p.repo); syncControls(); }
+    if (tree.truncated) toast('Large repo: GitHub truncated the file list. Point at a subfolder URL for full coverage.', true);
+    renderSourcePanel();
+    await loadSelected();
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { btn.disabled = false; btn.textContent = 'Load repo'; }
+}
+
+/* local files */
+async function entriesToCands(items) {
+  const out = [];
+  async function walk(entry, prefix) {
+    if (out.length > 30000) return;
+    if (entry.isFile) {
+      const f = await new Promise((res, rej) => entry.file(res, rej));
+      out.push({ path: prefix + f.name, size: f.size, load: () => f.text() });
+    } else if (entry.isDirectory) {
+      const dir = prefix + entry.name + '/';
+      if (EXCLUDE_DIR.test(dir)) return;
+      const reader = entry.createReader(); let batch;
+      do { batch = await new Promise((res, rej) => reader.readEntries(res, rej)); for (const e of batch) await walk(e, dir); } while (batch.length);
+    }
+  }
+  for (const e of items) if (e) await walk(e, '');
+  return out;
+}
+function filesToCands(list) {
+  return [...list].filter(f => !EXCLUDE_DIR.test(f.webkitRelativePath || f.name)).map(f => ({ path: f.webkitRelativePath || f.name, size: f.size, load: () => f.text() }));
+}
+async function useLocal(cands, label) {
+  if (!cands.length) { toast('No readable files found there.', true); return; }
+  SRC_STATE.repo = null; SRC_STATE.label = label; SRC_STATE.candidates = cands;
+  scoreFiles(cands);
+  if (!cands.some(c => c.score > 0)) cands.forEach(c => c.score = c.size < 400000 ? 0.1 : 0);
+  autoPick();
+  if (!S.titleLocked) { S.titleText = label.replace(/\s.*$/, ''); syncControls(); }
+  renderSourcePanel();
+  await loadSelected();
+}
+
+/* ───────────────────────── render engine ───────────────────────── */
+const cv = $('#cv');
+const E = { k: 1, ctx: cv.getContext('2d', { alpha: false }), chunks: new Map(), busy: false, rebuildSeq: 0 };
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+const pal = () => PALETTES[S.palette] || PALETTES.midnight;
+const monoFont = (size) => `${S.weight} ${size}px "${S.font}", ui-monospace, monospace`;
+const dispFont = (size) => `${DISPLAY_FONTS[S.displayFont] || 400} ${size}px "${S.displayFont}", Impact, sans-serif`;
+
+function previewScale() {
+  if (S.preview === 'full') return 1;
+  if (S.preview === 'half') return 0.5;
+  return Math.min(1, Math.round(Math.sqrt(3.6e6 / (S.width * S.height)) * 100) / 100);
+}
+async function ensureFonts() {
+  await Promise.all([document.fonts.load(monoFont(20), 'abc{}'), document.fonts.load(dispFont(40), 'ABC')]).catch(() => {});
+}
+
+function buildLayout() {
+  const g = mk(8, 8).getContext('2d');
+  g.font = monoFont(S.fontSize);
+  E.cw = g.measureText('0123456789').width / 10 + S.letterSpacing;
+  E.lh = S.fontSize * S.lineHeight;
+  const th = S.rotation * Math.PI / 180, cs = Math.abs(Math.cos(th)), sn = Math.abs(Math.sin(th));
+  E.aw = S.width * cs + S.height * sn + 2; E.ah = S.width * sn + S.height * cs + 2;
+  const pad = Math.min(S.padding, E.aw / 3, E.ah / 3);
+  E.pad = pad;
+  E.innerW = Math.max(E.cw * 8, E.aw - 2 * pad); E.innerH = Math.max(E.lh * 2, E.ah - 2 * pad);
+  E.cols = Math.max(4, Math.floor(E.innerW / E.cw));
+  E.visRows = Math.ceil(E.innerH / E.lh) + 1;
+  E.CH = 40;
+  const want = S.motion.startsWith('scroll') ? Math.ceil(E.visRows * S.scrollLen) : E.visRows;
+  E.tileRows = Math.max(E.CH, Math.ceil(Math.max(want, E.visRows) / E.CH) * E.CH);
+  E.nChunks = E.tileRows / E.CH;
+  E.rows = buildRows(E.tileRows);
+  E.chunks.clear();
+}
+function buildRows(n) {
+  const rows = [], T = SRC, len = T.length;
+  if (!len) return rows;
+  let p = Math.floor(S.offset * len) % len;
+  const raw = S.minify === 'raw';
+  if (raw && p) { const nl = T.indexOf('\n', p); p = nl === -1 ? 0 : nl + 1; }
+  let guard = 0;
+  while (rows.length < n && guard++ < n * 4 + 100) {
+    const s = p; let e = Math.min(len, p + E.cols);
+    if (raw) { const nl = T.indexOf('\n', p); if (nl !== -1 && nl < e) { rows.push({ s, e: nl }); p = nl + 1; if (p >= len) p = 0; continue; } }
+    rows.push({ s, e }); p = e; if (p >= len) p = 0;
+  }
+  return rows;
+}
+function getChunk(idx) {
+  let c = E.chunks.get(idx);
+  if (c) { E.chunks.delete(idx); E.chunks.set(idx, c); return c; }
+  const k = E.k, P = pal();
+  c = mk(E.innerW * k, E.CH * E.lh * k);
+  const g = c.getContext('2d');
+  g.font = monoFont(S.fontSize * k); g.textBaseline = 'middle';
+  if ('letterSpacing' in g) g.letterSpacing = (S.letterSpacing * k) + 'px';
+  const names = ['id', 'kw', 'str', 'num', 'fn', 'type', 'punct', 'file'];
+  const colors = S.colorMode === 'syntax' ? names.map(n => P[n]) : S.colorMode === 'mono' ? names.map(n => n === 'file' ? P.file : P.id) : names.map(() => '#fff');
+  const cw = E.cw * k;
+  for (let r = 0; r < E.CH; r++) {
+    const row = E.rows[idx * E.CH + r]; if (!row) break;
+    const y = (r + 0.5) * E.lh * k;
+    let start = row.s, cur = COL[row.s];
+    for (let i = row.s + 1; i <= row.e; i++) {
+      if (i === row.e || COL[i] !== cur) {
+        g.fillStyle = colors[cur] || colors[0];
+        g.fillText(SRC.slice(start, i), (start - row.s) * cw, y);
+        start = i; cur = COL[i];
+      }
+    }
+  }
+  E.chunks.set(idx, c);
+  const max = Math.ceil(E.visRows / E.CH) + 3;
+  while (E.chunks.size > max) E.chunks.delete(E.chunks.keys().next().value);
+  return c;
+}
+
+function buildCanvases() {
+  const k = E.k, W = Math.round(S.width * k), H = Math.round(S.height * k);
+  cv.width = W; cv.height = H;
+  E.W = W; E.H = H;
+  E.L = mk(W, H).getContext('2d');
+  E.B = mk(W, H).getContext('2d');
+  E.MF = mk(W, H).getContext('2d');
+  E.M = mk(W, H); E.cloudLayer = null;
+  // grain tile
+  const n = mk(256, 256), ng = n.getContext('2d'), id = ng.createImageData(256, 256), r = mulberry32(42);
+  for (let i = 0; i < id.data.length; i += 4) { const v = 128 + (r() - 0.5) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+  ng.putImageData(id, 0, 0);
+  E.grain = E.ctx.createPattern(n, 'repeat');
+  const sh = Math.max(2, Math.round(3 * k)), sc = mk(4, sh), sg = sc.getContext('2d');
+  sg.fillStyle = '#000'; sg.fillRect(0, 0, 4, Math.max(1, Math.round(sh / 3)));
+  E.scan = E.ctx.createPattern(sc, 'repeat');
+  buildBg(); buildVignette();
+}
+function buildBg() {
+  const P = pal(), W = E.W, H = E.H;
+  E.bg = mk(W, H); const g = E.bg.getContext('2d');
+  let fill = P.bg[0];
+  if (S.bgStyle === 'linear') {
+    const a = S.bgAngle * Math.PI / 180, dx = Math.cos(a), dy = Math.sin(a), half = (Math.abs(W * dx) + Math.abs(H * dy)) / 2;
+    fill = g.createLinearGradient(W / 2 - dx * half, H / 2 - dy * half, W / 2 + dx * half, H / 2 + dy * half);
+    fill.addColorStop(0, P.bg[0]); fill.addColorStop(1, P.bg[1]);
+  } else if (S.bgStyle === 'radial') {
+    fill = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) / 2);
+    fill.addColorStop(0, P.bg[1]); fill.addColorStop(1, P.bg[0]);
+  }
+  g.fillStyle = fill; g.fillRect(0, 0, W, H);
+}
+function buildVignette() {
+  const W = E.W, H = E.H, d = Math.hypot(W, H) / 2;
+  E.vig = mk(W, H); const g = E.vig.getContext('2d');
+  const gr = g.createRadialGradient(W / 2, H / 2, d * 0.35, W / 2, H / 2, d);
+  const ink = pal().light ? '70,50,30' : '0,0,0';
+  gr.addColorStop(0, `rgba(${ink},0)`); gr.addColorStop(1, `rgba(${ink},1)`);
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+
+function layoutCloud() {
+  const W = S.width, H = S.height, base = Math.min(W, H) * (0.55 + 0.45 * Math.min(1, Math.max(W, H) / Math.min(W, H) / 3));
+  const words = WORDS.slice(0, S.cloudWords);
+  if (!words.length) return [];
+  const r = mulberry32(S.cloudSeed), maxN = words[0].n, g = mk(8, 8).getContext('2d');
+  const boxes = [], placed = [], aspect = W / H;
+  const P = pal(), colors = [...P.accent, P.kw, P.fn, P.str, P.type];
+  const gap = base * 0.006;
+  for (const w of words) {
+    let size = base * (0.028 + 0.2 * Math.sqrt(w.n / maxN));
+    const rot = r() < S.cloudRotate;
+    for (let attempt = 0; attempt < 4; attempt++, size *= 0.78) {
+      g.font = dispFont(size);
+      const tw = g.measureText(w.word).width, th = size * 0.8;
+      const bw = rot ? th : tw, bh = rot ? tw : th;
+      if (bw > W * 0.95 || bh > H * 0.95) continue;
+      const a0 = r() * Math.PI * 2; let ok = null;
+      for (let t = 0; t < 2400; t++) {
+        const ang = a0 + t * 0.27, rad = t * base * 0.0016;
+        const x = W / 2 + Math.cos(ang) * rad * Math.sqrt(aspect), y = H / 2 + Math.sin(ang) * rad / Math.sqrt(aspect);
+        const b = { x0: x - bw / 2 - gap, y0: y - bh / 2 - gap, x1: x + bw / 2 + gap, y1: y + bh / 2 + gap };
+        if (b.x0 < 0 || b.y0 < 0 || b.x1 > W || b.y1 > H) { if (rad > Math.max(W, H)) break; continue; }
+        if (boxes.some(o => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0)) continue;
+        ok = { x, y, b }; break;
+      }
+      if (ok) { boxes.push(ok.b); placed.push({ word: w.word, x: ok.x, y: ok.y, size, rot, color: colors[Math.floor(r() * colors.length)] }); break; }
+    }
+  }
+  return placed;
+}
+function drawWords(g, words, k, solid) {
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const w of words) {
+    g.save(); g.translate(w.x * k, w.y * k); if (w.rot) g.rotate(-Math.PI / 2);
+    g.font = dispFont(w.size * k); g.fillStyle = solid ? w.color : '#fff';
+    g.fillText(w.word, 0, w.size * k * 0.04); g.restore();
+  }
+}
+function drawTitle(g, k) {
+  const lines = (S.titleText || ' ').split('\n').map(s => s.trimEnd()).filter((s, i, a) => s || a.length === 1);
+  const t = mk(8, 8).getContext('2d'); t.font = dispFont(100);
+  const maxW = Math.max(...lines.map(l => t.measureText(l).width), 1);
+  const lineH = 0.92;
+  let size = Math.min(S.width * S.titleScale / maxW * 100, S.height * S.titleScale / (lines.length * lineH));
+  g.font = dispFont(size * k); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const total = lines.length * size * lineH;
+  lines.forEach((l, i) => g.fillText(l, S.width * k / 2, (S.height / 2 - total / 2 + (i + 0.5) * size * lineH + size * 0.04) * k));
+}
+function buildMask() {
+  const k = E.k, W = E.W, H = E.H;
+  const g = E.M.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.filter = 'none'; g.clearRect(0, 0, W, H);
+  E.cloudLayer = null;
+  if (isCloud()) E.cloud = layoutCloud();
+  if (!isMask() && S.overlay !== 'cloud-solid') return;
+  if (S.overlay === 'cloud-solid') {
+    E.cloudLayer = mk(W, H); drawWords(E.cloudLayer.getContext('2d'), E.cloud, k, true); return;
+  }
+  const shapes = mk(W, H), sg = shapes.getContext('2d');
+  if (S.overlay === 'title') drawTitle(sg, k); else drawWords(sg, E.cloud, k, false);
+  if (S.maskInvert) { g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'destination-out'; }
+  if (S.feather > 0) g.filter = `blur(${S.feather * k}px)`;
+  g.drawImage(shapes, 0, 0);
+  g.filter = 'none'; g.globalCompositeOperation = 'source-over';
+}
+
+function drawTextLayer(phase) {
+  const g = E.L, k = E.k, W = E.W, H = E.H;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, W, H);
+  g.save();
+  g.translate(W / 2, H / 2); g.rotate(S.rotation * Math.PI / 180);
+  g.translate((-E.aw / 2 + E.pad) * k, (-E.ah / 2 + E.pad) * k);
+  g.beginPath(); g.rect(0, 0, E.innerW * k, E.innerH * k); g.clip();
+  const chunkH = E.CH * E.lh, tileH = E.tileRows * E.lh;
+  let off = 0, cursor = null;
+  if (S.motion === 'scroll-up') off = phase * tileH;
+  else if (S.motion === 'scroll-down') off = ((1 - phase) % 1) * tileH;
+  else if (S.motion === 'typewriter') {
+    const p = Math.min(1, phase / 0.85), total = E.cols * Math.ceil(E.innerH / E.lh), n = Math.floor(p * total);
+    const r = Math.floor(n / E.cols), c = n % E.cols;
+    if (phase > 0.95) g.globalAlpha = Math.max(0, 1 - (phase - 0.95) / 0.05);
+    g.beginPath(); g.rect(0, 0, E.innerW * k, r * E.lh * k); g.rect(0, r * E.lh * k, c * E.cw * k, E.lh * k); g.clip();
+    if (p < 1) cursor = { x: c * E.cw * k, y: r * E.lh * k };
+  }
+  for (let i = Math.floor(off / chunkH); i * chunkH < off + E.innerH; i++) {
+    const idx = ((i % E.nChunks) + E.nChunks) % E.nChunks;
+    g.drawImage(getChunk(idx), 0, Math.round((i * chunkH - off) * k));
+  }
+  g.restore();
+  if (cursor) {
+    g.save(); g.translate(W / 2, H / 2); g.rotate(S.rotation * Math.PI / 180); g.translate((-E.aw / 2 + E.pad) * k, (-E.ah / 2 + E.pad) * k);
+    g.fillStyle = pal().file; g.fillRect(cursor.x, cursor.y + E.lh * k * 0.1, E.cw * k, E.lh * k * 0.8); g.restore();
+  }
+  if (S.colorMode === 'gradient') {
+    const P = pal(), gr = g.createLinearGradient(0, 0, W, H);
+    P.accent.forEach((c, i) => gr.addColorStop(i / (P.accent.length - 1), c));
+    g.globalCompositeOperation = 'source-in'; g.fillStyle = gr; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+  }
+}
+function maskFrame(phase) {
+  const g = E.MF, W = E.W, H = E.H, TAU = Math.PI * 2;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+  if (isMask()) {
+    if (S.pulse) { const s = 1 + 0.035 * Math.sin(TAU * phase); g.translate(W / 2, H / 2); g.scale(s, s); g.translate(-W / 2, -H / 2); }
+    g.drawImage(E.M, 0, 0); g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  if (S.spotlight) {
+    const x = W / 2 + W * 0.32 * Math.sin(TAU * phase), y = H / 2 + H * 0.26 * Math.sin(TAU * 2 * phase + 1.1);
+    const rad = S.spotRadius * Math.min(W, H);
+    const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.globalCompositeOperation = 'lighter'; g.fillStyle = gr; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+  }
+  return g.canvas;
+}
+function renderFrame(phase, target = E.ctx) {
+  const c = target, W = E.W, H = E.H, k = E.k, P = pal();
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.filter = 'none';
+  c.drawImage(E.bg, 0, 0);
+  const hf = S.hueCycle ? `hue-rotate(${Math.round(phase * 360)}deg)` : '';
+  if (E.cloudLayer) { c.globalAlpha = S.cloudAlpha; c.filter = hf || 'none'; c.drawImage(E.cloudLayer, 0, 0); c.globalAlpha = 1; }
+  drawTextLayer(phase);
+  let bright = E.L.canvas;
+  if (isMask() || S.spotlight) {
+    const mf = maskFrame(phase);
+    if (S.dimAlpha > 0) { c.globalAlpha = S.dimAlpha; c.filter = ((S.desaturate ? 'grayscale(1) ' : '') + hf).trim() || 'none'; c.drawImage(E.L.canvas, 0, 0); }
+    const b = E.B; b.globalCompositeOperation = 'copy'; b.drawImage(E.L.canvas, 0, 0);
+    b.globalCompositeOperation = 'destination-in'; b.drawImage(mf, 0, 0); b.globalCompositeOperation = 'source-over';
+    bright = b.canvas; c.globalAlpha = 1;
+  } else c.globalAlpha = S.textAlpha;
+  c.filter = hf || 'none'; c.drawImage(bright, 0, 0);
+  if (S.glow > 0) {
+    c.globalCompositeOperation = P.light ? 'multiply' : 'lighter'; c.globalAlpha = Math.min(1, S.glow);
+    c.filter = `blur(${S.glowRadius * k}px) ${hf}`.trim(); c.drawImage(bright, 0, 0);
+    if (S.glow > 1) { c.globalAlpha = S.glow - 1; c.drawImage(bright, 0, 0); }
+    c.globalCompositeOperation = 'source-over';
+  }
+  c.filter = 'none';
+  if (S.scanlines > 0) { c.globalAlpha = S.scanlines; c.fillStyle = E.scan; c.fillRect(0, 0, W, H); }
+  if (S.vignette > 0) { c.globalAlpha = S.vignette; c.drawImage(E.vig, 0, 0); }
+  if (S.grain > 0) {
+    const r = mulberry32(Math.floor(phase * 100000) + 1);
+    E.grain.setTransform(new DOMMatrix().translate(Math.floor(r() * 256), Math.floor(r() * 256)));
+    c.globalCompositeOperation = 'overlay'; c.globalAlpha = S.grain; c.fillStyle = E.grain; c.fillRect(0, 0, W, H);
+  }
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+}
+
+/* rebuild orchestration */
+const DIRTY_MAP = { text: ['text', 'layout', 'mask'], size: ['canvas', 'layout', 'mask'], layout: ['layout'], color: ['layout', 'bg', 'mask'], mask: ['mask'], bg: ['bg'], frame: [], none: [] };
+let pending = new Set(['text', 'canvas', 'layout', 'mask']), needFrame = true, rebuildTimer = 0;
+function changed(kind) {
+  for (const p of DIRTY_MAP[kind] || []) pending.add(p);
+  needFrame = true;
+  clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuild, pending.size ? 30 : 0);
+  store.set('settings', S);
+  refreshVisibility();
+}
+async function rebuild(forceK) {
+  const seq = ++E.rebuildSeq;
+  await ensureFonts();
+  if (seq !== E.rebuildSeq) return;
+  const k = forceK ?? previewScale();
+  if (k !== E.k) { E.k = k; ['canvas', 'layout', 'mask'].forEach(p => pending.add(p)); }
+  if (pending.has('text')) processSource();
+  if (pending.has('canvas')) buildCanvases();
+  else if (pending.has('bg')) { buildBg(); buildVignette(); }
+  if (pending.has('layout')) buildLayout();
+  if (pending.has('mask')) buildMask();
+  pending.clear(); needFrame = true;
+  updateInfo();
+}
+
+/* ───────────────────────── playback ───────────────────────── */
+const animated = () => S.motion !== 'none' || S.spotlight || S.hueCycle || (S.pulse && isMask());
+let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, phase = 0, lastNow = performance.now();
+function setPlaying(v) { playing = v; $('#play').textContent = v ? '❚❚' : '▶'; }
+function tick(now) {
+  const dt = (now - lastNow) / 1000; lastNow = now;
+  if (!E.busy && !pending.size) {
+    if (playing && animated()) { phase = (phase + dt / S.loopSeconds) % 1; needFrame = true; }
+    if (needFrame) { renderFrame(phase); needFrame = false; updateTime(); }
+  }
+  requestAnimationFrame(tick);
+}
+function updateTime() {
+  $('#scrub').value = Math.round(phase * 1000);
+  $('#time').textContent = `${(phase * S.loopSeconds).toFixed(1)} / ${S.loopSeconds.toFixed(1)} s`;
+}
+function updateInfo() {
+  const files = SRC_STATE.files.length, bytes = SRC_STATE.files.reduce((a, f) => a + f.text.length, 0);
+  $('#info').replaceChildren(
+    el('span', {}, `${S.width}×${S.height}` + (E.k < 1 ? ` · preview ${Math.round(E.k * 100)}%` : '')),
+    el('span', {}, `${SRC_STATE.label} · ${files} file${files === 1 ? '' : 's'} · ${fmtKB(bytes)} → ${fmtKB(SRC.length)} minified`),
+    el('span', {}, `${E.cols} cols × ${E.visRows} rows`),
+  );
+}
+
+/* ───────────────────────── export ───────────────────────── */
+const baseName = () => `minwall-${(SRC_STATE.label || 'code').replace(/[^\w.-]+/g, '-').replace(/-+$/, '')}-${Math.round(S.width * S.exportScale)}x${Math.round(S.height * S.exportScale)}`;
+async function withScale(scale, fn) {
+  E.busy = true;
+  try { await rebuild(scale); return await fn(); }
+  finally { await rebuild(); E.busy = false; needFrame = true; }
+}
+async function savePNG() {
+  await withScale(S.exportScale, async () => {
+    renderFrame(phase);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    if (!blob) throw new Error('Canvas too large to encode');
+    download(blob, baseName() + '.png');
+    toast(`Saved ${cv.width}×${cv.height} PNG`);
+  }).catch(e => toast('PNG export failed: ' + e.message, true));
+}
+let cancelExport = false;
+function showBusy(title, text, frac) {
+  $('#busy').hidden = false; $('#busyTitle').textContent = title; $('#busyText').textContent = text; $('#busyBar').style.width = (frac * 100).toFixed(1) + '%';
+}
+async function exportVideo() {
+  if (S.videoFormat === 'mp4' && !('VideoEncoder' in window && window.Mp4Muxer)) { toast(window.isSecureContext ? 'This browser lacks WebCodecs. Switching to the WebM recorder.' : 'MP4 export needs a secure page (file://, localhost or https). Using the WebM recorder.'); S.videoFormat = 'webm'; syncControls(); }
+  cancelExport = false;
+  const wasPlaying = playing; setPlaying(false);
+  try {
+    await withScale(S.exportScale, () => S.videoFormat === 'mp4' ? exportMP4() : exportWebM());
+  } catch (e) { toast('Video export failed: ' + (e.message || e), true); }
+  finally { $('#busy').hidden = true; setPlaying(wasPlaying); }
+}
+async function exportMP4() {
+  const fps = +S.fps, frames = Math.max(1, Math.round(S.loopSeconds * fps));
+  // encoders need even dimensions; draw into an even-sized frame canvas
+  const w = E.W & ~1, h = E.H & ~1;
+  const bitrate = S.bitrate * 1e6;
+  const tries = [['avc', 'avc1.640034'], ['avc', 'avc1.640033'], ['avc', 'avc1.64003E'], ['hevc', 'hvc1.1.6.L153.B0'], ['vp9', 'vp09.00.51.08'], ['av1', 'av01.0.16M.08']];
+  let pick = null;
+  for (const [kind, codec] of tries) {
+    try { const s = await VideoEncoder.isConfigSupported({ codec, width: w, height: h, bitrate, framerate: fps }); if (s.supported) { pick = { kind, codec }; break; } } catch {}
+  }
+  if (!pick) throw new Error(`no encoder supports ${w}×${h}. Lower the export scale.`);
+  const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: pick.kind, width: w, height: h, frameRate: fps }, fastStart: 'in-memory' });
+  let encErr = null;
+  const enc = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: e => encErr = e });
+  enc.configure({ codec: pick.codec, width: w, height: h, bitrate, framerate: fps, latencyMode: 'quality' });
+  const frameCanvas = (w === E.W && h === E.H) ? cv : mk(w, h);
+  const t0 = performance.now();
+  for (let i = 0; i < frames; i++) {
+    if (cancelExport) { enc.close(); toast('Export cancelled'); return; }
+    if (encErr) throw encErr;
+    renderFrame(i / frames);
+    if (frameCanvas !== cv) frameCanvas.getContext('2d').drawImage(cv, 0, 0);
+    const vf = new VideoFrame(frameCanvas, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+    enc.encode(vf, { keyFrame: i % (fps * 2) === 0 }); vf.close();
+    while (enc.encodeQueueSize > 6) await new Promise(r => setTimeout(r, 2));
+    if (i % 3 === 0) {
+      const el_ = (performance.now() - t0) / 1000, eta = el_ / (i + 1) * (frames - i - 1);
+      showBusy(`Encoding ${pick.kind.toUpperCase()} · ${w}×${h} · ${fps} fps`, `Frame ${i + 1} / ${frames} · ${Math.ceil(eta)}s left`, (i + 1) / frames);
+      await new Promise(r => requestAnimationFrame(r));
+    }
+  }
+  showBusy('Finishing', 'Flushing encoder and writing MP4…', 1);
+  await enc.flush(); enc.close();
+  if (encErr) throw encErr;
+  muxer.finalize();
+  const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+  download(blob, baseName() + '.mp4');
+  toast(`Saved ${S.loopSeconds}s seamless loop · ${fmtKB(blob.size)}`);
+}
+async function exportWebM() {
+  if (!('MediaRecorder' in window)) throw new Error('MediaRecorder is not available here.');
+  const fps = +S.fps;
+  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(m => MediaRecorder.isTypeSupported(m));
+  const stream = cv.captureStream(fps), chunks = [];
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: S.bitrate * 1e6 });
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const stopped = new Promise(r => rec.onstop = r);
+  renderFrame(0); rec.start();
+  const start = performance.now(), dur = S.loopSeconds * 1000;
+  await new Promise(resolve => {
+    const step = now => {
+      const t = now - start;
+      if (t >= dur || cancelExport) return resolve();
+      renderFrame(t / dur);
+      showBusy(`Recording WebM in real time · ${E.W}×${E.H}`, `${(t / 1000).toFixed(1)} / ${S.loopSeconds}s`, t / dur);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+  rec.stop(); await stopped;
+  if (cancelExport) { toast('Export cancelled'); return; }
+  const blob = new Blob(chunks, { type: mime.split(';')[0] });
+  download(blob, baseName() + (mime.includes('mp4') ? '.mp4' : '.webm'));
+  toast(`Saved recording · ${fmtKB(blob.size)}`);
+}
+
+/* ───────────────────────── surprise ───────────────────────── */
+function surprise() {
+  const r = Math.random, pick = a => a[Math.floor(r() * a.length)];
+  Object.assign(S, {
+    palette: pick(Object.keys(PALETTES)), font: pick(MONO_FONTS), weight: r() < .2 ? 700 : 400,
+    fontSize: pick([8, 10, 11, 12, 13, 14, 16, 18, 22, 28]), lineHeight: +(1 + r() * 0.8).toFixed(2), letterSpacing: r() < .7 ? 0 : +(r() * 3).toFixed(1),
+    colorMode: pick(['syntax', 'syntax', 'gradient', 'mono']), bgStyle: pick(['linear', 'radial', 'solid']), bgAngle: Math.floor(r() * 360),
+    rotation: pick([0, 0, 0, -8, 8, -20, 20, -35, 45, 90]), overlay: pick(['title', 'title', 'cloud', 'cloud-solid', 'none']),
+    displayFont: pick(Object.keys(DISPLAY_FONTS)), dimAlpha: +(0.06 + r() * 0.25).toFixed(2), textAlpha: +(0.35 + r() * 0.5).toFixed(2),
+    maskInvert: r() < .15, desaturate: r() < .7, feather: r() < .75 ? 0 : Math.floor(r() * 16), cloudSeed: (r() * 1e9) | 0,
+    motion: pick(['scroll-up', 'scroll-up', 'scroll-down', 'typewriter']), spotlight: r() < .25, hueCycle: r() < .12, pulse: r() < .25,
+    glow: +(r() * 0.8).toFixed(2), glowRadius: Math.floor(3 + r() * 14), vignette: +(r() * 0.7).toFixed(2), grain: +(r() * 0.15).toFixed(2), scanlines: r() < .15 ? +(r() * 0.3).toFixed(2) : 0,
+    offset: +(r() * 0.9).toFixed(2),
+  });
+  syncControls(); changed('text'); changed('size');
+}
+
+/* ───────────────────────── UI ───────────────────────── */
+const CTRL_EL = new Map();
+function coerce(key, v) { return typeof DEFAULTS[key] === 'number' ? +v : v; }
+function buildPanel() {
+  const panel = $('#panel');
+  const secs = {};
+  const section = (name, open) => {
+    const d = el('details', { class: 'sec', 'data-sec': name }, el('summary', {}, name));
+    const openState = store.get('open', { Source: true, Canvas: true, Overlay: true, Motion: true });
+    d.open = openState[name] ?? open;
+    d.addEventListener('toggle', () => { const o = store.get('open', {}); o[name] = d.open; store.set('open', o); });
+    const b = el('div', { class: 'body' }); d.append(b); panel.append(d); secs[name] = b; return b;
+  };
+  section('Source', true).append(el('div', { id: 'sourceUI', style: 'display:grid;gap:10px' }));
+  for (const name of ['Canvas', 'Type', 'Color', 'Overlay', 'Motion', 'Finish', 'Export', 'Presets']) section(name, false);
+
+  for (const c of CONTROLS) {
+    const host = secs[c.sec]; let row;
+    const id = 'c_' + c.key;
+    if (c.type === 'range') {
+      const out = el('output', { for: id });
+      const inp = el('input', { type: 'range', id, min: c.min, max: c.max, step: c.step });
+      inp.addEventListener('input', () => { S[c.key] = +inp.value; out.textContent = c.fmt(+inp.value); changed(c.dirty); });
+      row = el('div', { class: 'row' }, el('label', { for: id }, c.label), inp, out);
+      CTRL_EL.set(c.key, { c, row, set: v => { inp.value = v; out.textContent = c.fmt(+v); } });
+    } else if (c.type === 'select') {
+      const s = el('select', { id }, c.options.map(([v, l]) => el('option', { value: v }, l)));
+      s.addEventListener('change', () => {
+        S[c.key] = coerce(c.key, s.value);
+        if (c.key === 'preset' && s.value !== 'custom') { const [w, h] = s.value.split('x').map(Number); S.width = w; S.height = h; syncControls(); }
+        changed(c.dirty);
+      });
+      row = el('div', { class: 'row wide' }, el('label', { for: id }, c.label), s);
+      CTRL_EL.set(c.key, { c, row, set: v => s.value = v });
+    } else if (c.type === 'check') {
+      const inp = el('input', { type: 'checkbox', id });
+      inp.addEventListener('change', () => { S[c.key] = inp.checked; changed(c.dirty); });
+      row = el('label', { class: 'check', for: id }, inp, c.label);
+      CTRL_EL.set(c.key, { c, row, set: v => inp.checked = !!v });
+    } else if (c.type === 'textarea') {
+      const t = el('textarea', { id, rows: 2, spellcheck: 'false' });
+      t.addEventListener('input', () => { S.titleText = t.value; S.titleLocked = true; changed('mask'); });
+      row = el('div', { class: 'row wide' }, el('label', { for: id }, c.label), t);
+      CTRL_EL.set(c.key, { c, row, set: v => { if (document.activeElement !== t) t.value = v; } });
+    } else if (c.type === 'button') {
+      row = el('div', { class: 'btns' }, el('button', { onclick: c.run }, c.label));
+      CTRL_EL.set(c.key, { c, row, set: () => {} });
+    } else if (c.type === 'dims') {
+      const w = el('input', { type: 'number', id: 'c_width', min: 64, max: 8192, 'aria-label': 'Width' });
+      const h = el('input', { type: 'number', id: 'c_height', min: 64, max: 8192, 'aria-label': 'Height' });
+      const swap = el('button', { class: 'icon', title: 'Swap orientation', 'aria-label': 'Swap width and height' }, '⇄');
+      const apply = () => {
+        const W = clamp(Math.round(+w.value || 0), 64, 8192), H = clamp(Math.round(+h.value || 0), 64, 8192);
+        S.width = W; S.height = H; S.preset = SIZES.some(s => s[0] === `${W}x${H}`) ? `${W}x${H}` : 'custom'; syncControls(); changed('size');
+      };
+      w.addEventListener('change', apply); h.addEventListener('change', apply);
+      swap.addEventListener('click', () => { [w.value, h.value] = [h.value, w.value]; apply(); });
+      row = el('div', { class: 'row wide' }, el('label', { for: 'c_width' }, 'Pixels'), el('div', { class: 'pair' }, w, el('span', { class: 'hint' }, '×'), h, swap));
+      CTRL_EL.set(c.key, { c, row, set: () => { w.value = S.width; h.value = S.height; } });
+    }
+    host.append(row);
+  }
+  secs.Export.append(
+    el('p', { class: 'hint' }, 'Every motion is built as a seamless loop, so the video repeats with no visible jump. MP4 renders frame by frame at full quality, however long that takes.'),
+    el('div', { class: 'btns' }, el('button', { onclick: savePNG }, 'Save PNG'), el('button', { onclick: copyPNG }, 'Copy PNG'), el('button', { class: 'primary', onclick: exportVideo }, 'Export video')),
+  );
+  buildPresets(secs.Presets);
+  syncControls();
+}
+function syncControls() { for (const [key, o] of CTRL_EL) o.set(S[key]); refreshVisibility(); }
+function refreshVisibility() { for (const [, o] of CTRL_EL) o.row.hidden = o.c.show ? !o.c.show() : false; }
+
+async function copyPNG() {
+  try {
+    await withScale(S.exportScale, async () => {
+      renderFrame(phase);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    });
+    toast('Copied PNG to the clipboard');
+  } catch (e) { toast('Copy failed. Use Save PNG instead.', true); }
+}
+
+/* presets */
+const LOOK_KEYS = Object.keys(DEFAULTS).filter(k => !['exportScale', 'fps', 'bitrate', 'videoFormat', 'budgetKB', 'pickMode', 'preview', 'titleLocked'].includes(k));
+function buildPresets(host) {
+  const name = el('input', { type: 'text', id: 'presetName', placeholder: 'Name this look' });
+  const list = el('div', { class: 'chips', id: 'presetList' });
+  const draw = () => {
+    const presets = store.get('presets', {});
+    list.replaceChildren(...Object.keys(presets).map(n => el('button', { class: 'chip', title: 'Apply ' + n, onclick: e => {
+      if (e.target.classList.contains('x')) { const p = store.get('presets', {}); delete p[n]; store.set('presets', p); draw(); return; }
+      Object.assign(S, presets[n]); syncControls(); changed('text'); changed('size'); toast('Applied “' + n + '”');
+    } }, n, el('span', { class: 'x', title: 'Delete' }, '×'))));
+    if (!list.children.length) list.append(el('span', { class: 'hint' }, 'Saved looks appear here.'));
+  };
+  const save = () => {
+    const n = name.value.trim() || `Look ${Object.keys(store.get('presets', {})).length + 1}`;
+    const p = store.get('presets', {}); p[n] = Object.fromEntries(LOOK_KEYS.map(k => [k, S[k]]));
+    if (!store.set('presets', p)) { toast('Could not save: browser storage is unavailable.', true); return; }
+    name.value = ''; draw(); toast('Saved “' + n + '”');
+  };
+  const exportJSON = () => download(new Blob([JSON.stringify(Object.fromEntries(LOOK_KEYS.map(k => [k, S[k]])), null, 2)], { type: 'application/json' }), 'minwall-look.json');
+  const imp = el('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => {
+    try { const o = JSON.parse(await e.target.files[0].text()); for (const k of LOOK_KEYS) if (k in o) S[k] = coerce(k, o[k]); syncControls(); changed('text'); changed('size'); toast('Imported look'); }
+    catch { toast('That file is not a Minwall look (.json).', true); }
+  } });
+  host.append(
+    el('div', { class: 'row wide' }, el('label', { for: 'presetName' }, 'Save as'), el('div', { class: 'pair' }, name, el('button', { onclick: save }, 'Save'))),
+    list,
+    el('div', { class: 'btns' }, el('button', { onclick: exportJSON }, 'Export .json'), el('button', { onclick: () => imp.click() }, 'Import .json'), imp,
+      el('button', { onclick: () => { const keep = { width: S.width, height: S.height, preset: S.preset }; Object.assign(S, DEFAULTS, keep); syncControls(); changed('text'); changed('size'); toast('Reset to defaults'); } }, 'Reset')),
+  );
+  draw();
+}
+
+/* source panel */
+let srcTab = store.get('srcTab', 'github'), fileFilter = '';
+function setSourceInfo(msg) { const n = $('#srcStatus'); if (n) n.textContent = msg; }
+function renderSourcePanel() {
+  const host = $('#sourceUI');
+  const tabs = el('div', { class: 'tabs', role: 'tablist' }, [['github', 'GitHub'], ['local', 'Local'], ['paste', 'Paste']].map(([k, l]) =>
+    el('button', { role: 'tab', 'aria-selected': String(srcTab === k), onclick: () => { srcTab = k; store.set('srcTab', k); renderSourcePanel(); } }, l)));
+  let pane;
+  if (srcTab === 'github') {
+    const repo = el('input', { type: 'text', id: 'ghRepo', placeholder: 'owner/repo or github.com URL', value: store.get('lastRepo', ''), spellcheck: 'false' });
+    const tok = el('input', { type: 'password', id: 'ghTok', placeholder: 'Token (optional, private repos / rate limit)', value: GH_TOKEN, autocomplete: 'off' });
+    tok.addEventListener('input', () => GH_TOKEN = tok.value.trim());
+    const go = () => { store.set('lastRepo', repo.value.trim()); loadRepo(repo.value); };
+    repo.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    pane = el('div', { style: 'display:grid;gap:8px' }, repo, tok,
+      el('div', { class: 'btns' }, el('button', { id: 'ghLoad', class: 'primary', onclick: go }, 'Load repo')),
+      el('div', { class: 'chips' }, ['preactjs/preact', 'BurntSushi/ripgrep', 'psf/requests', 'ggml-org/llama.cpp', 'torvalds/linux/tree/master/kernel/sched'].map(r =>
+        el('button', { class: 'chip', onclick: () => { repo.value = r; go(); } }, r.replace('/tree/master/', ':')))),
+      el('p', { class: 'hint' }, 'Paste a /tree/branch/folder URL to aim at a subfolder. The token stays in this tab only and is never saved.'));
+  } else if (srcTab === 'local') {
+    const dirIn = el('input', { type: 'file', webkitdirectory: true, multiple: true, hidden: true, onchange: e => useLocal(filesToCands(e.target.files), (e.target.files[0]?.webkitRelativePath || 'folder').split('/')[0]) });
+    const fileIn = el('input', { type: 'file', multiple: true, hidden: true, onchange: e => useLocal(filesToCands(e.target.files), e.target.files.length === 1 ? e.target.files[0].name : `${e.target.files.length} files`) });
+    const drop = el('div', { class: 'drop', id: 'drop' }, 'Drop a project folder or files here. node_modules, build output and lockfiles are skipped automatically.');
+    pane = el('div', { style: 'display:grid;gap:8px' }, drop, el('div', { class: 'btns' }, el('button', { onclick: () => dirIn.click() }, 'Choose folder'), el('button', { onclick: () => fileIn.click() }, 'Choose files')), dirIn, fileIn);
+  } else {
+    const ta = el('textarea', { id: 'pasteBox', rows: 6, placeholder: 'Paste any code here', spellcheck: 'false' });
+    pane = el('div', { style: 'display:grid;gap:8px' }, ta, el('div', { class: 'btns' }, el('button', { class: 'primary', onclick: () => {
+      if (!ta.value.trim()) { toast('Paste some code first.', true); return; }
+      SRC_STATE.repo = null; SRC_STATE.candidates = []; setFiles([{ path: 'pasted.js', text: ta.value }], 'pasted code');
+    } }, 'Use pasted code')));
+  }
+  const files = SRC_STATE.files, bytes = files.reduce((a, f) => a + f.text.length, 0);
+  const info = el('div', { class: 'srcinfo', id: 'srcStatus' }, el('b', {}, SRC_STATE.label), ` · ${files.length} file${files.length === 1 ? '' : 's'} · ${fmtKB(bytes)}`,
+    WORDS.length ? el('div', {}, 'Top words: ' + WORDS.slice(0, 6).map(w => w.word).join(', ')) : null);
+  const kids = [tabs, pane, info];
+  if (SRC_STATE.candidates.length) {
+    const cands = SRC_STATE.candidates;
+    const nSel = SRC_STATE.selected.size, selBytes = cands.filter(c => SRC_STATE.selected.has(c.path)).reduce((a, c) => a + c.size, 0);
+    const budget = el('input', { type: 'range', id: 'c_budget', min: 20, max: 2000, step: 10, value: S.budgetKB });
+    const bOut = el('output', { for: 'c_budget' }, S.budgetKB + 'K');
+    budget.addEventListener('input', () => { S.budgetKB = +budget.value; bOut.textContent = S.budgetKB + 'K'; store.set('settings', S); });
+    const filt = el('input', { type: 'search', placeholder: `Filter ${cands.length} files`, value: fileFilter, 'aria-label': 'Filter files' });
+    const list = el('div', { class: 'files' });
+    const drawList = () => {
+      const q = fileFilter.toLowerCase();
+      const shown = cands.filter(c => !q || c.path.toLowerCase().includes(q))
+        .sort((a, b) => (SRC_STATE.selected.has(b.path) - SRC_STATE.selected.has(a.path)) || (b.score - a.score)).slice(0, 400);
+      list.replaceChildren(...shown.map(c => {
+        const on = SRC_STATE.selected.has(c.path);
+        const cb = el('input', { type: 'checkbox', checked: on, onchange: () => { cb.checked ? SRC_STATE.selected.add(c.path) : SRC_STATE.selected.delete(c.path); lab.classList.toggle('on', cb.checked); } });
+        const lab = el('label', { class: on ? 'on' : '', title: c.path }, cb, el('span', {}, c.path), el('span', {}, fmtKB(c.size)));
+        return lab;
+      }));
+    };
+    filt.addEventListener('input', () => { fileFilter = filt.value; drawList(); });
+    drawList();
+    kids.push(
+      el('div', { class: 'row' }, el('label', { for: 'c_budget' }, 'Code budget'), budget, bOut),
+      el('div', { class: 'btns' },
+        el('button', { title: 'Pick the most representative source files within the budget', onclick: () => { autoPick('best'); renderSourcePanel(); loadSelected(); } }, 'Auto-pick'),
+        el('button', { title: 'Weighted random pick of good files', onclick: () => { autoPick('random'); renderSourcePanel(); loadSelected(); } }, 'Re-roll'),
+        el('button', { class: 'primary', onclick: loadSelected }, `Load ${nSel}`)),
+      el('p', { class: 'hint' }, `${nSel} of ${cands.length} files ticked · ${fmtKB(selBytes)}`),
+      filt, list);
+  }
+  host.replaceChildren(...kids);
+  const drop = $('#drop');
+  if (drop) {
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  }
+}
+// whole-window drop target
+window.addEventListener('dragover', e => { if (e.dataTransfer?.types?.includes('Files')) e.preventDefault(); });
+window.addEventListener('drop', async e => {
+  if (!e.dataTransfer?.files?.length) return;
+  e.preventDefault(); $('#drop')?.classList.remove('over');
+  const entries = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+  const label = entries.length === 1 ? entries[0].name : `${entries.length} items`;
+  const cands = entries.length ? await entriesToCands(entries) : filesToCands(e.dataTransfer.files);
+  useLocal(cands, label);
+});
+window.addEventListener('paste', e => {
+  if (e.target.closest('input, textarea')) return;
+  const t = e.clipboardData?.getData('text');
+  if (t && t.length > 40) { SRC_STATE.repo = null; SRC_STATE.candidates = []; setFiles([{ path: 'pasted.js', text: t }], 'pasted code'); toast('Using pasted code'); }
+});
+
+/* transport + keys */
+$('#play').addEventListener('click', () => setPlaying(!playing));
+$('#scrub').addEventListener('input', e => { setPlaying(false); phase = +e.target.value / 1000; needFrame = true; });
+$('#surprise').addEventListener('click', surprise);
+$('#savePng').addEventListener('click', savePNG);
+$('#saveVid').addEventListener('click', exportVideo);
+$('#busyCancel').addEventListener('click', () => { cancelExport = true; });
+window.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey || E.busy) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); setPlaying(!playing); }
+  else if (k === 'r') surprise();
+  else if (k === 'p') savePNG();
+  else if (k === 'v') exportVideo();
+  else if (k === 'f') $('#stage').requestFullscreen?.().catch(() => {});
+});
+
+/* ───────────────────────── boot ───────────────────────── */
+(function boot() {
+  const saved = store.get('source', null);
+  if (saved?.files?.length) { SRC_STATE.files = saved.files; SRC_STATE.label = saved.label; SRC_STATE.repo = saved.repo; }
+  else SRC_STATE.files = [{ path: 'minwall/app.js', text: document.getElementById('app').textContent }, { path: 'minwall/style.css', text: document.querySelector('style').textContent }];
+  buildPanel();
+  processSource();
+  renderSourcePanel();
+  setPlaying(playing);
+  rebuild().then(() => requestAnimationFrame(tick));
+})();
+</script>
+</body>
+</html>
