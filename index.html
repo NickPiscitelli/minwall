@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Minwall</title>
+<meta name="description" content="Turn any GitHub repo into a minified-code wallpaper or a seamless looping video. Runs entirely in your browser.">
+<meta property="og:title" content="Minwall">
+<meta property="og:description" content="Turn any GitHub repo into a minified-code wallpaper or a seamless looping video.">
+<meta property="og:image" content="https://nickpiscitelli.github.io/minwall/assets/social.png">
+<meta property="og:url" content="https://nickpiscitelli.github.io/minwall/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1e1f29">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Azeret+Mono:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Dela+Gothic+One&family=Fira+Code:wght@400;700&family=Geist+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Martian+Mono:wght@400;700&family=Rubik+Mono+One&family=Source+Code+Pro:wght@400;700&family=Space+Mono:wght@400;700&family=Unbounded:wght@900&family=Victor+Mono:wght@400;700&display=swap">
@@ -875,7 +882,7 @@ async function exportMP4() {
     if (i % 3 === 0) {
       const el_ = (performance.now() - t0) / 1000, eta = el_ / (i + 1) * (frames - i - 1);
       showBusy(`Encoding ${pick.kind.toUpperCase()} · ${w}×${h} · ${fps} fps`, `Frame ${i + 1} / ${frames} · ${Math.ceil(eta)}s left`, (i + 1) / frames);
-      await new Promise(r => requestAnimationFrame(r));
+      await new Promise(r => setTimeout(r, 0));
     }
   }
   showBusy('Finishing', 'Flushing encoder and writing MP4…', 1);
@@ -952,7 +959,7 @@ function buildPanel() {
     if (c.type === 'range') {
       const out = el('output', { for: id });
       const inp = el('input', { type: 'range', id, min: c.min, max: c.max, step: c.step });
-      inp.addEventListener('input', () => { S[c.key] = +inp.value; out.textContent = c.fmt(+inp.value); changed(c.dirty); });
+      inp.addEventListener('input', () => { S[c.key] = +inp.value; out.textContent = c.fmt(+inp.value); changed(c.dirty); resumeFor(c); });
       row = el('div', { class: 'row' }, el('label', { for: id }, c.label), inp, out);
       CTRL_EL.set(c.key, { c, row, set: v => { inp.value = v; out.textContent = c.fmt(+v); } });
     } else if (c.type === 'select') {
@@ -960,13 +967,13 @@ function buildPanel() {
       s.addEventListener('change', () => {
         S[c.key] = coerce(c.key, s.value);
         if (c.key === 'preset' && s.value !== 'custom') { const [w, h] = s.value === 'screen' ? screenDims() : s.value.split('x').map(Number); S.width = w; S.height = h; syncControls(); }
-        changed(c.dirty);
+        changed(c.dirty); resumeFor(c);
       });
       row = el('div', { class: 'row wide' }, el('label', { for: id }, c.label), s);
       CTRL_EL.set(c.key, { c, row, set: v => s.value = v });
     } else if (c.type === 'check') {
       const inp = el('input', { type: 'checkbox', id });
-      inp.addEventListener('change', () => { S[c.key] = inp.checked; changed(c.dirty); });
+      inp.addEventListener('change', () => { S[c.key] = inp.checked; changed(c.dirty); resumeFor(c); });
       row = el('label', { class: 'check', for: id }, inp, c.label);
       CTRL_EL.set(c.key, { c, row, set: v => inp.checked = !!v });
     } else if (c.type === 'textarea') {
@@ -999,6 +1006,8 @@ function buildPanel() {
   buildPresets(secs.Presets);
   syncControls();
 }
+// turning on a motion effect while paused would otherwise look broken, so resume playback
+function resumeFor(c) { if (c.sec === 'Motion' && !playing && animated()) setPlaying(true); }
 function syncControls() { for (const [key, o] of CTRL_EL) o.set(S[key]); refreshVisibility(); }
 function refreshVisibility() { for (const [, o] of CTRL_EL) o.row.hidden = o.c.show ? !o.c.show() : false; }
 
@@ -1204,6 +1213,7 @@ window.addEventListener('resize', () => {
   processSource();
   renderSourcePanel();
   setPlaying(playing);
+  if (!playing) setTimeout(() => toast('Paused because Reduce Motion is on in your system settings. Press Space to play.'), 600);
   rebuild().then(() => requestAnimationFrame(tick));
 })();
 </script>
