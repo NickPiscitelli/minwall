@@ -6,113 +6,124 @@
 <title>Minwall</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Azeret+Mono:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Dela+Gothic+One&family=Fira+Code:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Martian+Mono:wght@400;700&family=Rubik+Mono+One&family=Source+Code+Pro:wght@400;700&family=Space+Mono:wght@400;700&family=Unbounded:wght@900&family=Victor+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Azeret+Mono:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Dela+Gothic+One&family=Fira+Code:wght@400;700&family=Geist+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Martian+Mono:wght@400;700&family=Rubik+Mono+One&family=Source+Code+Pro:wght@400;700&family=Space+Mono:wght@400;700&family=Unbounded:wght@900&family=Victor+Mono:wght@400;700&display=swap">
 <style>
-/* Layout: transport bar on top, control rail left, the wallpaper stage fills the rest */
+/* Layout: full-bleed canvas; glass transport bar on top and glass control rail float over it, fading out when idle */
 :root {
-  --ink: #0f1117;
-  --panel: #151821;
-  --raise: #1d2130;
-  --line: #282d3c;
-  --fg: #dde0ea;
-  --muted: #8a90a3;
-  --accent: #f5a524;
-  --accent-ink: #1b1305;
-  --danger: #ff7b72;
+  --ink: #16171f;
+  --glass: rgba(30, 31, 41, 0.58);
+  --glass-strong: rgba(30, 31, 41, 0.82);
+  --raise: rgba(68, 71, 90, 0.55);
+  --line: rgba(139, 150, 196, 0.22);
+  --fg: #f8f8f2;
+  --muted: #a2a8c6;
+  --accent: #bd93f9;
+  --accent-ink: #1e1f29;
+  --danger: #ff5555;
   --ui: "Instrument Sans", system-ui, -apple-system, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
   --display: "Unbounded", "Arial Black", sans-serif;
   color-scheme: dark;
 }
 * { box-sizing: border-box }
 [hidden] { display: none !important }
 html, body { height: 100%; margin: 0 }
-body { background: var(--ink); color: var(--fg); font: 14px/1.45 var(--ui); display: grid; grid-template-rows: auto 1fr; overflow: hidden }
-header.bar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap }
+body { background: var(--ink); color: var(--fg); font: 14px/1.45 var(--ui); overflow: hidden }
+.glass { background: var(--glass); border: 1px solid var(--line); border-radius: 14px; backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5); box-shadow: 0 12px 40px rgba(0,0,0,.35) }
+.fade { transition: opacity .45s ease, transform .45s ease }
+body.idle .fade, body.hideui .fade { opacity: 0; pointer-events: none }
+body.idle header.bar, body.hideui header.bar { transform: translateY(-8px) }
+body.idle aside, body.hideui aside { transform: translateX(-10px) }
+body.idle { cursor: none }
+
+header.bar { position: fixed; z-index: 5; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 16px; flex-wrap: wrap }
 .brand { font: 900 16px/1 var(--display); letter-spacing: .01em; white-space: nowrap }
 .brand span { color: var(--accent) }
-.transport { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px }
+.transport { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 240px }
 #scrub { flex: 1 }
 .time { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 96px; text-align: right }
-.actions { display: flex; gap: 8px; flex-wrap: wrap }
-button { font: 500 13px var(--ui); color: var(--fg); background: var(--raise); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px; cursor: pointer; white-space: nowrap }
-button:hover { border-color: #3d4459 }
+.actions { display: flex; gap: 6px; flex-wrap: wrap }
+button { font: 500 13px var(--ui); color: var(--fg); background: var(--raise); border: 1px solid var(--line); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap }
+button:hover { border-color: rgba(189,147,249,.5) }
 button:disabled { opacity: .5; cursor: default }
 button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600 }
-button.ghost { background: transparent }
 button.icon { width: 34px; padding: 6px 0; font-family: var(--mono) }
+button[aria-pressed=true] { border-color: var(--accent); color: var(--accent) }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
-kbd { font: 10.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-left: 4px }
+kbd { font: 10.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-left: 5px }
 button.primary kbd { color: var(--accent-ink); border-color: rgba(0,0,0,.25) }
 
-.app { display: grid; grid-template-columns: 348px 1fr; min-height: 0 }
-aside { overflow-y: auto; border-right: 1px solid var(--line); background: var(--panel); padding-bottom: 48px }
+.app { display: contents }
+aside { position: fixed; z-index: 4; top: calc(76px + env(safe-area-inset-top, 0px)); left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: 340px; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; scrollbar-width: thin }
 details.sec { border-bottom: 1px solid var(--line) }
+details.sec:last-child { border-bottom: 0 }
 details.sec > summary { list-style: none; cursor: pointer; padding: 12px 16px; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; user-select: none }
 details.sec > summary::-webkit-details-marker { display: none }
 details.sec > summary::after { content: "+" }
 details.sec[open] > summary::after { content: "–" }
 details.sec[open] > summary { color: var(--fg) }
 .body { padding: 0 16px 16px; display: grid; gap: 10px }
-.row { display: grid; grid-template-columns: 92px 1fr 46px; align-items: center; gap: 8px; min-width: 0 }
-.row.wide { grid-template-columns: 92px 1fr }
+.row { display: grid; grid-template-columns: 88px 1fr 46px; align-items: center; gap: 8px; min-width: 0 }
+.row.wide { grid-template-columns: 88px 1fr }
 .row > label { color: var(--muted); font-size: 12.5px }
 .row output { font: 11.5px var(--mono); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums }
 .row .pair { display: flex; gap: 6px; align-items: center; min-width: 0 }
 .check { display: flex; gap: 8px; align-items: center; color: var(--fg); font-size: 13px; cursor: pointer }
-select, input[type=text], input[type=number], input[type=password], input[type=search], textarea { width: 100%; min-width: 0; background: var(--ink); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: 13px var(--ui) }
+select, input[type=text], input[type=number], input[type=password], input[type=search], textarea { width: 100%; min-width: 0; background: rgba(22,23,31,.6); color: var(--fg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font: 13px var(--ui) }
+select option { background: #282a36 }
 textarea { font: 12px/1.4 var(--mono); resize: vertical }
 input[type=range] { width: 100%; accent-color: var(--accent) }
 input[type=checkbox] { accent-color: var(--accent); margin: 0 }
 .hint { color: var(--muted); font-size: 12px; margin: 0 }
-.hint code { font: 11.5px var(--mono); color: var(--fg) }
 .btns { display: flex; gap: 6px; flex-wrap: wrap }
 .btns > button { flex: 1 }
 
-.tabs { display: flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; background: var(--ink) }
+.tabs { display: flex; border: 1px solid var(--line); border-radius: 8px; padding: 2px; gap: 2px; background: rgba(22,23,31,.5) }
 .tabs button { flex: 1; border: 0; background: transparent; color: var(--muted); padding: 5px 0 }
 .tabs button[aria-selected=true] { background: var(--raise); color: var(--fg) }
 .chips { display: flex; flex-wrap: wrap; gap: 6px }
-.chip { font: 11.5px var(--mono); padding: 3px 8px; border-radius: 99px; background: var(--ink); border: 1px solid var(--line); color: var(--muted) }
+.chip { font: 11.5px var(--mono); padding: 3px 8px; border-radius: 99px; background: rgba(22,23,31,.5); border: 1px solid var(--line); color: var(--muted) }
 .chip:hover { color: var(--fg) }
 .chip .x { margin-left: 6px; opacity: .6 }
-.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 18px 12px; text-align: center; color: var(--muted); font-size: 13px; transition: border-color .15s, background .15s }
-.drop.over { border-color: var(--accent); background: rgba(245,165,36,.06); color: var(--fg) }
-.srcinfo { font: 11.5px/1.5 var(--mono); color: var(--muted); background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; overflow-wrap: anywhere }
+.drop { border: 1.5px dashed var(--line); border-radius: 9px; padding: 18px 12px; text-align: center; color: var(--muted); font-size: 13px; transition: border-color .15s, background .15s }
+.drop.over { border-color: var(--accent); background: rgba(189,147,249,.08); color: var(--fg) }
+.srcinfo { font: 11.5px/1.5 var(--mono); color: var(--muted); background: rgba(22,23,31,.5); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; overflow-wrap: anywhere }
 .srcinfo b { color: var(--fg); font-weight: 500 }
-.files { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--ink) }
+.files { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: rgba(22,23,31,.5) }
 .files label { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; padding: 3px 8px; font: 11.5px var(--mono); color: var(--muted); cursor: pointer }
 .files label:hover { background: var(--raise) }
 .files label.on { color: var(--fg) }
 .files label span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left }
 .files label span:last-child { font-variant-numeric: tabular-nums; opacity: .7 }
 
-main.stage { position: relative; display: flex; align-items: center; justify-content: center; padding: 28px; min-width: 0; min-height: 0; background: repeating-conic-gradient(#121520 0 25%, #0f1117 0 50%) 0 0 / 22px 22px }
-#cv { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; box-shadow: 0 24px 70px rgba(0,0,0,.55), 0 0 0 1px var(--line) }
-.info { position: absolute; left: 16px; bottom: 12px; right: 16px; display: flex; gap: 16px; flex-wrap: wrap; font: 11.5px var(--mono); color: var(--muted); pointer-events: none }
-.info span { background: rgba(15,17,23,.82); padding: 3px 8px; border-radius: 4px; font-variant-numeric: tabular-nums }
-.busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10,11,16,.72); backdrop-filter: blur(3px) }
-.busy .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; width: min(380px, calc(100% - 32px)); display: grid; gap: 12px }
+main.stage { position: fixed; inset: 0; background: var(--ink) }
+#cv { width: 100%; height: 100%; object-fit: contain; display: block }
+.info { position: fixed; z-index: 3; left: 364px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font: 11.5px var(--mono); color: var(--muted); pointer-events: none }
+.info span { background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--line); padding: 3px 9px; border-radius: 99px; font-variant-numeric: tabular-nums }
+body.nopanel aside { opacity: 0; pointer-events: none; transform: translateX(-10px) }
+body.nopanel .info { left: 12px }
+.busy { position: fixed; z-index: 8; inset: 0; display: grid; place-items: center; background: rgba(15,16,22,.55); backdrop-filter: blur(4px) }
+.busy .card { background: var(--glass-strong); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; width: min(380px, calc(100% - 32px)); display: grid; gap: 12px }
 .busy h3 { margin: 0; font: 600 15px var(--ui) }
-.bar-track { height: 6px; border-radius: 3px; background: var(--ink); overflow: hidden }
+.bar-track { height: 6px; border-radius: 3px; background: rgba(0,0,0,.35); overflow: hidden }
 .bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .1s linear }
 .busy p { margin: 0; font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
-#toast { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: min(420px, calc(100% - 32px)); background: var(--raise); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.4); opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; z-index: 10 }
-#toast.show { opacity: 1; transform: none }
-#toast.err { border-color: var(--danger); color: #ffd6d2 }
+#toast { position: fixed; left: 50%; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 8px); max-width: min(460px, calc(100% - 32px)); background: var(--glass-strong); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 10 }
+#toast.show { opacity: 1; transform: translate(-50%, 0) }
+#toast.err { border-color: var(--danger); color: #ffd6d6 }
 
-@media (max-width: 860px) {
-  body { overflow: auto; height: auto; display: block }
-  .app { grid-template-columns: 1fr }
-  main.stage { order: -1; height: 56vh; padding: 16px }
-  aside { border-right: 0; overflow: visible }
+@media (max-width: 760px) {
+  header.bar { left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top, 0px)); gap: 8px }
+  .brand { display: none }
+  .actions kbd { display: none }
+  aside { top: auto; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 48vh }
   .info { display: none }
 }
-@media (prefers-reduced-motion: reduce) { #toast, .drop { transition: none } }
+@media (prefers-reduced-motion: reduce) { .fade, #toast, .drop { transition: none } }
 </style>
 </head>
 <body>
-<header class="bar">
+<header class="bar glass fade">
   <div class="brand">min<span>wall</span></div>
   <div class="transport">
     <button class="icon" id="play" title="Play / pause (Space)" aria-label="Play or pause">❚❚</button>
@@ -123,13 +134,16 @@ main.stage { position: relative; display: flex; align-items: center; justify-con
     <button id="surprise" title="Randomize the look (R)">Surprise me<kbd>R</kbd></button>
     <button id="savePng" title="Save PNG (P)">PNG<kbd>P</kbd></button>
     <button id="saveVid" class="primary" title="Export the loop as video (V)">Export video<kbd>V</kbd></button>
+    <button id="togglePanel" class="icon" title="Show / hide controls (C)" aria-label="Toggle controls" aria-pressed="true">☰</button>
+    <button id="toggleUI" class="icon" title="Hide all overlays (H)" aria-label="Hide overlays">◐</button>
+    <button id="fullscreen" class="icon" title="Fullscreen (F)" aria-label="Fullscreen">⛶</button>
   </div>
 </header>
 <div class="app">
-  <aside id="panel"></aside>
+  <aside id="panel" class="glass fade"></aside>
   <main class="stage" id="stage">
     <canvas id="cv" width="1920" height="1080"></canvas>
-    <div class="info" id="info"></div>
+    
     <div class="busy" id="busy" hidden>
       <div class="card">
         <h3 id="busyTitle">Encoding video</h3>
@@ -140,6 +154,7 @@ main.stage { position: relative; display: flex; align-items: center; justify-con
     </div>
   </main>
 </div>
+<div class="info fade" id="info"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
@@ -186,6 +201,7 @@ async function pool(items, n, fn) {
 
 /* ───────────────────────── data ───────────────────────── */
 const PALETTES = {
+  dracula: { name: 'Dracula', bg: ['#1b1c25', '#282a36'], id: '#e2e2dc', kw: '#ff79c6', str: '#f1fa8c', num: '#bd93f9', fn: '#50fa7b', type: '#8be9fd', punct: '#6272a4', file: '#ffb86c', accent: ['#bd93f9', '#ff79c6', '#8be9fd'] },
   midnight: { name: 'Midnight', bg: ['#0a0f1e', '#17203d'], id: '#8b9cc4', kw: '#c792ea', str: '#c3e88d', num: '#f78c6c', fn: '#82aaff', type: '#ffcb6b', punct: '#4f5b7c', file: '#ff5370', accent: ['#82aaff', '#c792ea', '#ff5370'] },
   ember: { name: 'Ember', bg: ['#120907', '#2b120c'], id: '#b8978a', kw: '#ff7a45', str: '#ffd166', num: '#ef476f', fn: '#ffb38a', type: '#f4a261', punct: '#6a453a', file: '#ffd166', accent: ['#ff7a45', '#ffd166', '#ef476f'] },
   rosepine: { name: 'Rosé Pine', bg: ['#191724', '#26233a'], id: '#908caa', kw: '#31a0c4', str: '#f6c177', num: '#eb6f92', fn: '#9ccfd8', type: '#c4a7e7', punct: '#524f67', file: '#ebbcba', accent: ['#c4a7e7', '#ebbcba', '#9ccfd8'] },
@@ -196,9 +212,10 @@ const PALETTES = {
   paper: { name: 'Paper', light: true, bg: ['#f4f0e6', '#e5ddcb'], id: '#6f6656', kw: '#a3361f', str: '#39703a', num: '#8c4fa3', fn: '#1f5aa3', type: '#9a6b00', punct: '#b3a891', file: '#a3361f', accent: ['#a3361f', '#1f5aa3', '#39703a'] },
   frost: { name: 'Frost', light: true, bg: ['#eef4f9', '#cfdfee'], id: '#5b7389', kw: '#2359c4', str: '#138a72', num: '#c2410c', fn: '#0e7490', type: '#7c3aed', punct: '#a9bccd', file: '#2359c4', accent: ['#2359c4', '#0e7490', '#7c3aed'] },
 };
-const MONO_FONTS = ['JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Space Mono', 'Source Code Pro', 'Victor Mono', 'Martian Mono', 'Azeret Mono', 'DM Mono'];
+const MONO_FONTS = ['Geist Mono', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Space Mono', 'Source Code Pro', 'Victor Mono', 'Martian Mono', 'Azeret Mono', 'DM Mono'];
 const DISPLAY_FONTS = { 'Anton': 400, 'Archivo Black': 400, 'Bebas Neue': 400, 'Unbounded': 900, 'Rubik Mono One': 400, 'Dela Gothic One': 400, 'JetBrains Mono': 700 };
 const SIZES = [
+  ['screen', 'Fit this screen (live)'],
   ['3840x2160', '4K UHD · 3840×2160'], ['5120x2880', '5K · 5120×2880'], ['2560x1440', 'QHD · 2560×1440'], ['1920x1080', 'Full HD · 1920×1080'],
   ['3456x2234', 'MacBook Pro 16″ · 3456×2234'], ['3024x1964', 'MacBook Pro 14″ · 3024×1964'], ['2560x1664', 'MacBook Air 13″ · 2560×1664'],
   ['3440x1440', 'Ultrawide · 3440×1440'], ['5120x1440', 'Super ultrawide · 5120×1440'],
@@ -215,17 +232,22 @@ const EXCLUDE_DIR = /(^|\/)(node_modules|vendor|dist|build|out|target|\.git|\.ne
 const EXCLUDE_FILE = /(\.min\.|\.map$|(^|\/)[^/]*lock[^/]*$|\.snap$|\.pb\.|_pb2|\.generated\.|\.d\.ts$|\.bundle\.)/i;
 
 /* ───────────────────────── settings ───────────────────────── */
+const screenDims = () => {
+  const d = window.devicePixelRatio || 1, tiny = innerWidth < 320 || innerHeight < 240;
+  const w = tiny ? screen.width : innerWidth, h = tiny ? screen.height : innerHeight;
+  return [clamp(Math.round(w * d), 64, 8192) & ~1, clamp(Math.round(h * d), 64, 8192) & ~1];
+};
 const DEFAULTS = {
-  preset: '3840x2160', width: 3840, height: 2160, preview: 'auto', padding: 0, rotation: 0,
-  font: 'JetBrains Mono', weight: 400, fontSize: 14, lineHeight: 1.35, letterSpacing: 0, minify: 'aggressive', fileMarkers: true, offset: 0,
-  palette: 'midnight', colorMode: 'syntax', textAlpha: 0.6, bgStyle: 'linear', bgAngle: 135,
+  preset: 'screen', width: screenDims()[0], height: screenDims()[1], preview: 'auto', padding: 0, rotation: 0,
+  font: 'Geist Mono', weight: 400, fontSize: 14, lineHeight: 1.35, letterSpacing: 0, minify: 'aggressive', fileMarkers: true, offset: 0,
+  palette: 'dracula', colorMode: 'syntax', textAlpha: 0.6, bgStyle: 'linear', bgAngle: 135,
   overlay: 'title', titleText: 'MINWALL', titleLocked: false, displayFont: 'Anton', titleScale: 0.82, dimAlpha: 0.16, desaturate: true, feather: 0, maskInvert: false,
   cloudWords: 70, cloudRotate: 0.2, cloudSeed: 7, cloudAlpha: 0.85,
   motion: 'scroll-up', loopSeconds: 12, scrollLen: 1, spotlight: false, spotRadius: 0.28, hueCycle: false, pulse: false,
-  glow: 0.35, glowRadius: 6, vignette: 0.45, grain: 0.08, scanlines: 0,
+  glow: 0.4, glowRadius: 7, vignette: 0.4, grain: 0.08, scanlines: 0,
   fps: 60, exportScale: 1, bitrate: 30, videoFormat: 'mp4', pickMode: 'best', budgetKB: 250,
 };
-const S = Object.assign({}, DEFAULTS, store.get('settings', {}));
+const S = Object.assign({}, DEFAULTS, store.get('settings2', {}));
 
 const sel = (sec, key, label, options, dirty, show) => ({ sec, key, label, type: 'select', options, dirty, show });
 const rng = (sec, key, label, min, max, step, dirty, fmt, show) => ({ sec, key, label, type: 'range', min, max, step, dirty, fmt, show });
@@ -481,7 +503,7 @@ async function useLocal(cands, label) {
 const cv = $('#cv');
 const E = { k: 1, ctx: cv.getContext('2d', { alpha: false }), chunks: new Map(), busy: false, rebuildSeq: 0 };
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
-const pal = () => PALETTES[S.palette] || PALETTES.midnight;
+const pal = () => PALETTES[S.palette] || PALETTES.dracula;
 const monoFont = (size) => `${S.weight} ${size}px "${S.font}", ui-monospace, monospace`;
 const dispFont = (size) => `${DISPLAY_FONTS[S.displayFont] || 400} ${size}px "${S.displayFont}", Impact, sans-serif`;
 
@@ -753,7 +775,7 @@ function changed(kind) {
   for (const p of DIRTY_MAP[kind] || []) pending.add(p);
   needFrame = true;
   clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuild, pending.size ? 30 : 0);
-  store.set('settings', S);
+  store.set('settings2', S);
   refreshVisibility();
 }
 async function rebuild(forceK) {
@@ -937,7 +959,7 @@ function buildPanel() {
       const s = el('select', { id }, c.options.map(([v, l]) => el('option', { value: v }, l)));
       s.addEventListener('change', () => {
         S[c.key] = coerce(c.key, s.value);
-        if (c.key === 'preset' && s.value !== 'custom') { const [w, h] = s.value.split('x').map(Number); S.width = w; S.height = h; syncControls(); }
+        if (c.key === 'preset' && s.value !== 'custom') { const [w, h] = s.value === 'screen' ? screenDims() : s.value.split('x').map(Number); S.width = w; S.height = h; syncControls(); }
         changed(c.dirty);
       });
       row = el('div', { class: 'row wide' }, el('label', { for: id }, c.label), s);
@@ -1064,7 +1086,7 @@ function renderSourcePanel() {
     const nSel = SRC_STATE.selected.size, selBytes = cands.filter(c => SRC_STATE.selected.has(c.path)).reduce((a, c) => a + c.size, 0);
     const budget = el('input', { type: 'range', id: 'c_budget', min: 20, max: 2000, step: 10, value: S.budgetKB });
     const bOut = el('output', { for: 'c_budget' }, S.budgetKB + 'K');
-    budget.addEventListener('input', () => { S.budgetKB = +budget.value; bOut.textContent = S.budgetKB + 'K'; store.set('settings', S); });
+    budget.addEventListener('input', () => { S.budgetKB = +budget.value; bOut.textContent = S.budgetKB + 'K'; store.set('settings2', S); });
     const filt = el('input', { type: 'search', placeholder: `Filter ${cands.length} files`, value: fileFilter, 'aria-label': 'Filter files' });
     const list = el('div', { class: 'files' });
     const drawList = () => {
@@ -1126,11 +1148,55 @@ window.addEventListener('keydown', e => {
   else if (k === 'r') surprise();
   else if (k === 'p') savePNG();
   else if (k === 'v') exportVideo();
-  else if (k === 'f') $('#stage').requestFullscreen?.().catch(() => {});
+  else if (k === 'f') toggleFullscreen();
+  else if (k === 'c') togglePanel();
+  else if (k === 'h') toggleUI();
+  else if (k === 'escape' && document.body.classList.contains('hideui')) toggleUI();
+});
+
+/* overlay chrome: idle fade, toggles, fullscreen, live screen size */
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen?.();
+  else document.documentElement.requestFullscreen?.().catch(() => toast('Fullscreen is not available here.', true));
+}
+function togglePanel(force) {
+  const hide = force ?? !document.body.classList.contains('nopanel');
+  document.body.classList.toggle('nopanel', hide);
+  $('#togglePanel').setAttribute('aria-pressed', String(!hide));
+  store.set('nopanel', hide);
+}
+function toggleUI() {
+  const on = document.body.classList.toggle('hideui');
+  if (on) toast('Overlays hidden. Press H or Esc to bring them back.');
+}
+$('#fullscreen').addEventListener('click', toggleFullscreen);
+$('#togglePanel').addEventListener('click', () => togglePanel());
+$('#toggleUI').addEventListener('click', toggleUI);
+togglePanel(store.get('nopanel', false));
+let idleTimer = 0;
+function wake() {
+  document.body.classList.remove('idle');
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    const busyUI = document.activeElement?.closest?.('aside, header') || $('aside:hover, header:hover') || E.busy;
+    if (busyUI) wake(); else document.body.classList.add('idle');
+  }, 3000);
+}
+['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => window.addEventListener(ev, wake, { passive: true }));
+wake();
+let resizeTimer = 0;
+window.addEventListener('resize', () => {
+  if (S.preset !== 'screen') return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const [w, h] = screenDims();
+    if (w !== S.width || h !== S.height) { S.width = w; S.height = h; syncControls(); changed('size'); }
+  }, 250);
 });
 
 /* ───────────────────────── boot ───────────────────────── */
 (function boot() {
+  if (S.preset === 'screen') [S.width, S.height] = screenDims();
   const saved = store.get('source', null);
   if (saved?.files?.length) { SRC_STATE.files = saved.files; SRC_STATE.label = saved.label; SRC_STATE.repo = saved.repo; }
   else SRC_STATE.files = [{ path: 'minwall/app.js', text: document.getElementById('app').textContent }, { path: 'minwall/style.css', text: document.querySelector('style').textContent }];
