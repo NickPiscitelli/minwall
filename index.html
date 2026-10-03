@@ -1201,6 +1201,7 @@ window.addEventListener('resize', () => {
   if (S.preset !== 'screen') return;
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
+    if (S.preset !== 'screen') return;
     const [w, h] = screenDims();
     if (w !== S.width || h !== S.height) { S.width = w; S.height = h; syncControls(); changed('size'); }
   }, 250);

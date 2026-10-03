@@ -4,7 +4,9 @@ Turn any codebase into a wallpaper or a seamless looping video. Point it at a Gi
 
 **[Open minwall →](https://nickpiscitelli.github.io/minwall/)**
 
-![minwall rendering its own source code in Dracula colors, with the word MINWALL lit up in code](assets/hero.jpg)
+![minwall typing its own source code into the word MINWALL, in Dracula colors](assets/demo.gif)
+
+▶ [Watch the full-quality 1080p60 loop](https://nickpiscitelli.github.io/minwall/assets/minwall-loop.mp4) (12 seconds, made with minwall's own MP4 export)
 
 It's one HTML file with no build step and no backend. Everything runs in your browser, including the video encoder.
 
@@ -21,6 +23,8 @@ It's one HTML file with no build step and no backend. Everything runs in your br
   - PNG at 0.5× to 2×, or copy it to the clipboard.
   - MP4 (H.264, or HEVC/AV1 for very large sizes) is rendered frame by frame with WebCodecs, so it's frame-perfect and usually faster than real time. A 12-second 1080p60 loop takes about 2 seconds.
   - Real-time WebM recording is the fallback.
+
+![The word MINWALL made of minwall's own source, in Dracula colors](assets/hero.jpg)
 
 ![The phrase "ship it" made of code in the Synthwave palette](assets/ship-it.jpg)
 
