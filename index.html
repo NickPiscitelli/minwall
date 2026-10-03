@@ -236,6 +236,7 @@ const CODE_EXT = { js: 1, mjs: 1, cjs: 1, ts: 1, tsx: 1, jsx: 1, py: 1, rb: 1, g
 const HASH_LANGS = new Set(['py', 'rb', 'sh', 'bash', 'zsh', 'yml', 'yaml', 'toml', 'r', 'pl', 'ex', 'exs', 'nim', 'jl', 'mk', 'coffee', 'cr']);
 const PLAIN_LANGS = new Set(['md', 'txt', 'json', '']);
 const EXCLUDE_DIR = /(^|\/)(node_modules|vendor|dist|build|out|target|\.git|\.next|\.nuxt|\.svelte-kit|coverage|__pycache__|third_party|thirdparty|external|deps|Pods|\.venv|venv|env|site-packages|bower_components|generated|\.cache|\.idea|\.vscode)(\/|$)/i;
+const VENDORED = /(^|\/)(jquery|prism|bootstrap|lodash|underscore|modernizr|highlight|popper|polyfills?|normalize|fontawesome|font-awesome)[\w.-]*\.(js|css)$/i;
 const EXCLUDE_FILE = /(\.min\.|\.map$|(^|\/)[^/]*lock[^/]*$|\.snap$|\.pb\.|_pb2|\.generated\.|\.d\.ts$|\.bundle\.)/i;
 
 /* ───────────────────────── settings ───────────────────────── */
@@ -373,7 +374,7 @@ function scoreFiles(cands) {
   const primary = Object.entries(langBytes).sort((a, b) => b[1] - a[1])[0]?.[0];
   for (const c of cands) {
     const e = extOf(c.path), w = CODE_EXT[e] || 0;
-    if (!w || EXCLUDE_DIR.test(c.path) || EXCLUDE_FILE.test(c.path) || c.size < 300 || c.size > 250000) { c.score = 0; continue; }
+    if (!w || EXCLUDE_DIR.test(c.path) || EXCLUDE_FILE.test(c.path) || VENDORED.test(c.path) || c.size < 300 || c.size > 250000) { c.score = 0; continue; }
     const kb = c.size / 1024;
     let s = w * Math.exp(-Math.pow(Math.log(kb / 14), 2) / 3);
     const depth = c.path.split('/').length - 1;
@@ -386,7 +387,9 @@ function scoreFiles(cands) {
   return primary;
 }
 function autoPick(mode = S.pickMode) {
-  const cands = SRC_STATE.candidates.filter(c => c.score > 0);
+  // drop files far less relevant than the best one, so small repos don't pull in every stylesheet and README
+  const top = Math.max(0, ...SRC_STATE.candidates.map(c => c.score));
+  const cands = SRC_STATE.candidates.filter(c => c.score > 0 && c.score >= top * 0.1);
   const budget = S.budgetKB * 1024, maxFiles = 60;
   let order;
   if (mode === 'random') {
